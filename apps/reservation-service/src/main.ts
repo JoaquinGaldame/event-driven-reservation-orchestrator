@@ -1,6 +1,12 @@
+import { db, reservations, eq } from "@reservation/database";
 import { KafkaEventBus } from "@reservation/event-bus";
 import { logger } from "@reservation/logger";
-import type { InventoryLockedEvent, InventoryLockRequestedEvent, InventoryRejectedEvent, ReservationRequestedEvent } from "@reservation/contracts";
+import type {
+  InventoryLockedEvent,
+  InventoryLockRequestedEvent,
+  InventoryRejectedEvent,
+  ReservationRequestedEvent
+} from "@reservation/contracts";
 
 const eventBus = new KafkaEventBus({
   clientId: "reservation-service",
@@ -22,6 +28,19 @@ eventBus.subscribe<ReservationRequestedEvent>(
       correlationId: event.correlationId
     });
 
+    await db
+      .insert(reservations)
+      .values({
+        id: event.payload.reservationId,
+        propertyId: event.payload.propertyId,
+        unitId: event.payload.unitId,
+        channel: event.payload.channel,
+        checkIn: new Date(event.payload.checkIn),
+        checkOut: new Date(event.payload.checkOut),
+        status: "PENDING"
+      })
+      .onConflictDoNothing();
+
     const inventoryLockRequested: InventoryLockRequestedEvent = {
       eventId: crypto.randomUUID(),
       eventType: "InventoryLockRequested",
@@ -42,7 +61,15 @@ eventBus.subscribe<ReservationRequestedEvent>(
 );
 
 eventBus.subscribe<InventoryLockedEvent>("InventoryLocked", async (event) => {
-  logger.info("InventoryLocked received. Reservation can be confirmed.", {
+  await db
+    .update(reservations)
+    .set({
+      status: "INVENTORY_LOCKED",
+      updatedAt: new Date()
+    })
+    .where(eq(reservations.id, event.payload.reservationId));
+
+  logger.info("InventoryLocked received. Reservation inventory locked.", {
     service: "reservation-service",
     reservationId: event.payload.reservationId,
     unitId: event.payload.unitId,
@@ -51,7 +78,16 @@ eventBus.subscribe<InventoryLockedEvent>("InventoryLocked", async (event) => {
 });
 
 eventBus.subscribe<InventoryRejectedEvent>("InventoryRejected", async (event) => {
-  logger.warn("InventoryRejected received. Reservation must be rejected.", {
+  await db
+    .update(reservations)
+    .set({
+      status: "REJECTED",
+      rejectionReason: event.payload.reason,
+      updatedAt: new Date()
+    })
+    .where(eq(reservations.id, event.payload.reservationId));
+
+  logger.warn("InventoryRejected received. Reservation rejected.", {
     service: "reservation-service",
     reservationId: event.payload.reservationId,
     unitId: event.payload.unitId,

@@ -1,0 +1,1 @@
+ALTER TABLE "reservations" ADD COLUMN "channel" varchar(100) NOT NULL;
