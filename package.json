@@ -1,0 +1,39 @@
+{
+  "name": "event-driven-reservation-orchestrator",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev:up": "bash scripts/dev-up.sh",
+    "dev:down": "bash scripts/dev-down.sh",
+    "test:up": "bash scripts/test-up.sh",
+    "test:down": "bash scripts/test-down.sh",
+    "db:migrate": "bash scripts/db-migrate.sh",
+    "db:seed": "bash scripts/db-seed.sh",
+    "reset:local": "bash scripts/reset-local.sh",
+    "topics:create": "bash scripts/create-topics.sh",
+    "health": "bash scripts/health-check.sh",
+    "simulate:demo": "bash scripts/simulate-demo.sh",
+    "logs": "bash scripts/logs.sh",
+    "chaos:stop": "bash scripts/chaos-stop-service.sh",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "11.1.2",
+      "onFail": "download"
+    }
+  },
+  "type": "module",
+  "devDependencies": {
+    "@types/node": "^25.7.0",
+    "tsx": "^4.22.0",
+    "typescript": "^6.0.3"
+  },
+  "packageManager": "pnpm@11.1.2+sha512.415a1cc25974731e75455c1468371be74c5aa5fb7621b50d4056d222451609f11412f23fd602e6169f1e060466641f798597e1be961a10688836a67b16569499"
+}
