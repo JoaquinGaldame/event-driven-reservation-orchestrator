@@ -1,4 +1,15 @@
 services:
+  postgres:
+    image: postgres:16
+    container_name: ero-postgres
+    environment:
+      POSTGRES_USER: reservation_user
+      POSTGRES_PASSWORD: reservation_pass
+      POSTGRES_DB: reservation_orchestrator
+    ports:
+      - "55432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
   redpanda:
     image: redpandadata/redpanda:latest
     container_name: ero-redpanda
@@ -16,3 +27,5 @@ services:
     ports:
       - "9092:9092"
       - "9644:9644"
+volumes:
+  postgres_data:

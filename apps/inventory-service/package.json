@@ -11,6 +11,7 @@
   "dependencies": {
     "@reservation/contracts": "workspace:*",
     "@reservation/event-bus": "workspace:*",
-    "@reservation/logger": "workspace:*"
+    "@reservation/logger": "workspace:*",
+    "@reservation/database": "workspace:*"
   }
 }
