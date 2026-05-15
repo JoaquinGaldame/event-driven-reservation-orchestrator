@@ -40,6 +40,18 @@ importers:
         specifier: ^3.23.8
         version: 3.25.76
 
+  apps/reservation-service:
+    dependencies:
+      '@reservation/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
+      '@reservation/event-bus':
+        specifier: workspace:*
+        version: link:../../packages/event-bus
+      '@reservation/logger':
+        specifier: workspace:*
+        version: link:../../packages/logger
+
   packages/contracts: {}
 
   packages/event-bus:
