@@ -1,0 +1,16 @@
+{
+  "name": "@reservation/inventory-service",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "src/main.ts",
+  "scripts": {
+    "dev": "tsx src/main.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@reservation/contracts": "workspace:*",
+    "@reservation/event-bus": "workspace:*",
+    "@reservation/logger": "workspace:*"
+  }
+}

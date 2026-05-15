@@ -19,4 +19,57 @@ export type ReservationRequestedEvent = {
   };
 };
 
-export type ReservationEvent = ReservationRequestedEvent;
+export type InventoryLockRequestedEvent = {
+  eventId: string;
+  eventType: "InventoryLockRequested";
+  occurredAt: string;
+  correlationId: string;
+  causationId: string;
+
+  payload: {
+    reservationId: string;
+    propertyId: string;
+    unitId: string;
+    checkIn: string;
+    checkOut: string;
+  };
+};
+
+export type InventoryLockedEvent = {
+  eventId: string;
+  eventType: "InventoryLocked";
+  occurredAt: string;
+  correlationId: string;
+  causationId: string;
+
+  payload: {
+    reservationId: string;
+    propertyId: string;
+    unitId: string;
+    checkIn: string;
+    checkOut: string;
+  };
+};
+
+export type InventoryRejectedEvent = {
+  eventId: string;
+  eventType: "InventoryRejected";
+  occurredAt: string;
+  correlationId: string;
+  causationId: string;
+
+  payload: {
+    reservationId: string;
+    propertyId: string;
+    unitId: string;
+    checkIn: string;
+    checkOut: string;
+    reason: "UNIT_NOT_AVAILABLE";
+  };
+};
+
+export type ReservationEvent =
+  | ReservationRequestedEvent
+  | InventoryLockRequestedEvent
+  | InventoryLockedEvent
+  | InventoryRejectedEvent;
