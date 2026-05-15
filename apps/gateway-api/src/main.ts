@@ -1,11 +1,16 @@
-import { InMemoryEventBus } from "@reservation/event-bus";
+import { KafkaEventBus } from "@reservation/event-bus";
 import { logger } from "@reservation/logger";
 import { buildApp } from "./app.js";
 
 const PORT = Number(process.env.PORT ?? 3000);
 const HOST = process.env.HOST ?? "0.0.0.0";
 
-const eventBus = new InMemoryEventBus();
+const eventBus = new KafkaEventBus({
+  clientId: "gateway-api",
+  brokers: [process.env.KAFKA_BROKER ?? "localhost:9092"],
+  groupId: "gateway-api"
+});
+
 
 const app = buildApp({
   eventBus
