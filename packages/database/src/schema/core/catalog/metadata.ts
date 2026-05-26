@@ -9,7 +9,7 @@ export const countries = pgTable("countries", {
 export const provinces = pgTable("provinces", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
   countryId: integer("country_id").notNull().references(() => countries.id),
-  code: varchar("code", { length: 50 }).notNull(),
+  code: varchar("code", { length: 50 }).notNull().unique(),
   name: varchar("name", { length: 150 }).notNull(),
 });
 

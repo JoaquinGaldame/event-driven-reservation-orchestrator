@@ -11,7 +11,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { owners } from "../owners/owners.js";
 import { currencies, provinces } from "../catalog/metadata.js";
-import { propertyTypes } from "../catalog/property_catalog.js";
+import { propertyTypes, propertyStatuses } from "../catalog/property_catalog.js";
 
 
 
@@ -21,15 +21,15 @@ export const properties = pgTable(
     id: bigserial("id", { mode: "number" }).primaryKey(),
     publicId: uuid("public_id").defaultRandom().notNull(),
     name: text("name").notNull(),
-    displayName: text("name").notNull(),
+    displayName: text("displayName").notNull(),
     slug: text("slug").notNull(),
     ownerId: bigint("owner_id", { mode: "number" }).notNull().references(() => owners.id),
     timezone: text("timezone").notNull().default("America/Argentina/Buenos_Aires"),
     currencyId: integer("currency_id").notNull().references(() => currencies.id),
     provinceId: integer("province_id").notNull().references(() => provinces.id),
-    propertyTypeId: integer("property_type_id").notNull().references(() => propertyTypes.id),
+    typeId: integer("type_id").notNull().references(() => propertyTypes.id),
     address: text("address"),
-    status: text("status").notNull().default("ACTIVE"),
+    statusId: integer("status_id").notNull().references(() => propertyStatuses.id),
     maxGuests: integer("max_guests").notNull(),
     defaultCheckInMinutes: integer("default_check_in_minutes").notNull().default(900),
     defaultCheckOutMinutes: integer("default_check_out_minutes").notNull().default(660),

@@ -9,7 +9,6 @@ import { integer, pgTable, varchar } from "drizzle-orm/pg-core";
 export const ownerStatuses = pgTable("owner_statuses", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
   code: varchar("code", { length: 50 }).notNull().unique(),
-  name: varchar("name", { length: 100 }).notNull(),
 });
 
 
@@ -34,5 +33,5 @@ export const commissionTypes = pgTable("commission_types", {
  */
 export const ownerTypes = pgTable("owner_types", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-  code: varchar("code", { length: 10 }).notNull().unique(),
+  code: varchar("code", { length: 20 }).notNull().unique(),
 });

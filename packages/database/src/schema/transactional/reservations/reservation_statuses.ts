@@ -10,6 +10,6 @@ import { integer, pgTable, varchar } from "drizzle-orm/pg-core";
  */
 export const reservationStatuses = pgTable("reservation_statuses", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-  code: varchar("code", { length: 10 }).notNull().unique(),
+  code: varchar("code", { length: 50 }).notNull().unique(),
   name: varchar("name", { length: 100 }).notNull(),
 });

@@ -6,8 +6,14 @@ import {
   provinces,
   languages,
   ownerTypes,
+  ownerStatuses,
+  commissionTypes,
   reservationStatuses,
   paymentStatuses,
+  propertyTypes,
+  propertyStatuses,
+  unitStatuses,
+  unitTypes,
   channels,
   channelTypes,
   channelStatuses,
@@ -20,6 +26,8 @@ export async function seedReferenceData() {
 
   await seedMetadata();
   await seedCurrencies();
+  await seedPropertyMetaData();
+  await seedUnitsMetaData();
   await seedOwnerTypes();
   await seedReservationStatuses();
   await seedPaymentStatuses();
@@ -70,11 +78,10 @@ async function seedMetadata() {
       { code: "NI", name: "Nicaragua" },
       { code: "SV", name: "El Salvador" },
       { code: "CU", name: "Cuba" },
-      { code: "BO", name: "Bolivia" },
-      { code: "PY", name: "Paraguay" },
-      { code: "UY", name: "Uruguay" },
     ])
-    .onConflictDoNothing();
+    .onConflictDoNothing({
+      target: countries.code
+    });
 
   /*
    * ARGENTINA
@@ -124,15 +131,15 @@ async function seedMetadata() {
       { countryId: argentina.id, code: "AR-V", name: "Tierra del Fuego" },
       { countryId: argentina.id, code: "AR-T", name: "Tucumán" },
     ])
-    .onConflictDoNothing();
+    .onConflictDoNothing({
+      target: provinces.code
+    });
 
   /*
    * LANGUAGES
    */
   await db
     .insert(languages)
-
-    
     .values([
       { codeIso: "en", name: "English" },
       { codeIso: "es", name: "Spanish" },
@@ -148,7 +155,9 @@ async function seedMetadata() {
       { codeIso: "ko", name: "Korean" },
       { codeIso: "hi", name: "Hindi" },
     ])
-    .onConflictDoNothing();
+    .onConflictDoNothing({
+      target: languages.codeIso
+    });
 }
 
 async function seedCurrencies() {
@@ -174,7 +183,103 @@ async function seedCurrencies() {
     .onConflictDoNothing();
 }
 
+async function seedPropertyMetaData() {
+  /*
+   * Property Types
+   */
+  await db
+    .insert(propertyTypes)
+    .values([
+      { code: "HOUSE", name: "House" },
+      { code: "APARTMENT", name: "Apartment" },
+      { code: "HOTEL", name: "Hotel" },
+      { code: "VILLA", name: "Villa" },
+      { code: "CABIN", name: "Cabin" },
+      { code: "CONDO", name: "Condominium" },
+      { code: "TOWNHOUSE", name: "Townhouse" },
+      { code: "BUNGALOW", name: "Bungalow" },
+      { code: "LODGE", name: "Lodge" },
+      { code: "RESORT", name: "Resort" },
+      { code: "HOSTEL", name: "Hostel" },
+      { code: "GUESTHOUSE", name: "Guesthouse" },
+      { code: "BED_BREAKFAST", name: "Bed & Breakfast" },
+      { code: "BOAT", name: "Boat" },
+      { code: "TINY_HOUSE", name: "Tiny House" },
+      { code: "CASTLE", name: "Castle" },
+      { code: "FARM", name: "Farm Stay" },
+      { code: "GLAMPING", name: "Glamping" },
+      { code: "COTTAGE", name: "Cottage" },
+      { code: "LOFT", name: "Loft" },
+      { code: "DUPLEX", name: "Duplex" },
+      { code: "PENTHOUSE", name: "Penthouse" },
+      { code: "STUDIO", name: "Studio" },
+      { code: "ROOM", name: "Private Room" },
+      { code: "SHARED_ROOM", name: "Shared Room" },
+  ]).onConflictDoNothing({
+    target: propertyTypes.code,
+  });
+
+    /*
+   * Property Types
+   */
+  await db
+    .insert(propertyStatuses)
+    .values([
+      { code: "ACTIVE", name: "Active", description: ""},
+      { code: "INACTIVE", name: "Inactive", description: ""},
+      { code: "ONBOARDING", name: "ONBOARDING", description: ""},
+      { code: "SUSPENDED", name: "Suspended", description: ""},
+      { code: "ARCHIVED", name: "Archived", description: ""},
+    ]).onConflictDoNothing({
+    target: propertyStatuses.code,
+  });
+}
+
+async function seedUnitsMetaData() {
+  /*
+   * Unit Types
+   */
+  await db
+    .insert(unitTypes)
+    .values([
+      { code: "ROOM", name: "House" },
+      { code: "APARTMENT", name: "Apartment" },
+      { code: "HOUSE", name: "House" },
+      { code: "CABIN", name: "Cabin" },
+      { code: "CABIN", name: "Cabin" },
+      { code: "BED", name: "Bed" },
+      { code: "SUITE", name: "Suite" },
+  ]).onConflictDoNothing({
+    target: unitTypes.code,
+  });
+
+  /*
+   * Unit Types
+   */
+  await db
+    .insert(unitStatuses)
+    .values([
+      { code: "ACTIVE" },
+      { code: "INACTIVE" },
+      { code: "MAINTENANCE" },
+      { code: "BLOCKED" },
+      { code: "ARCHIVED" },
+  ]).onConflictDoNothing({
+    target: unitStatuses.code,
+  });
+}
+
 async function seedOwnerTypes() {
+    await db
+    .insert(ownerStatuses)
+    .values([
+      { code: "ACTIVE" },
+      { code: "INACTIVE" },
+      { code: "SUSPENDED" },
+      { code: "ARCHIVED"}
+    ])
+    .onConflictDoNothing();
+
   await db
     .insert(ownerTypes)
     .values([
@@ -183,6 +288,15 @@ async function seedOwnerTypes() {
       { code: "ngo" },
       { code: "government"},
       { code: "trust" }
+    ])
+    .onConflictDoNothing();
+
+  await db
+    .insert(commissionTypes)
+    .values([
+      { code: "PERCENTAGE", name: "Percentage" },
+      { code: "FIXED_PER_RESERVATION", name: "Fixed Per Reservation" },
+      { code: "FIXED_PER_NIGHT", name: "Fixed Per Night" }
     ])
     .onConflictDoNothing();
 }

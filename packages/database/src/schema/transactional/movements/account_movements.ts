@@ -14,6 +14,7 @@ import { payments } from "../index.js";
 import { accountMovementTypes } from "./account_movements_types.js";
 import { ledgerEntryTypes } from "./ledger_entry_types.js";
 import { sql } from "drizzle-orm";
+import { currencies } from "../../core/index.js";
 
 export const accountMovements = pgTable(
   "account_movements",
@@ -26,7 +27,7 @@ export const accountMovements = pgTable(
     accountIdentifier: varchar("account_identifier", { length: 255 }).notNull(),
     movementType: varchar("movement_type", { length: 50 }).notNull(),
     amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
-    currencyId: bigint("currency_id", { mode: "number" }).notNull().references(() => payments.currencyId),
+    currencyId: bigint("currency_id", { mode: "number" }).notNull().references(() => currencies.id),
     description: text("description"),
     ledgerEntryTypeId: integer("ledger_entry_type_id").notNull().references(() => ledgerEntryTypes.id),
     reversedAt: timestamp("reversed_at", { withTimezone: true }),

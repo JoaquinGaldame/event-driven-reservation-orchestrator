@@ -1,7 +1,7 @@
 import { sql } from "drizzle-orm";
 import { db } from "../client.js";
 import { eq } from "drizzle-orm";
-import { owners, properties, units, guests, channels, ownerTypes, ownerStatuses, currencies, unitStatuses, unitTypes, channelStatuses, channelTypes, countries, languages }  from "../schema/index.js";
+import { owners, properties, units, guests, ownerTypes, ownerStatuses, propertyStatuses, provinces, propertyTypes, currencies, unitStatuses, unitTypes, countries, languages }  from "../schema/index.js";
 import { ownerBankAccounts } from "../schema/core/owners/owners_bank_accounts.js";
 import { ownerContacts } from "../schema/core/owners/owner_contacts.js";
 
@@ -14,7 +14,6 @@ export async function seedDemoData() {
   
   const property = await seedProperty(owner.id);
   await seedUnits(property.id);
-  await seedChannels();
   await seedGuest();
 
   console.log("[seed] demo complete");
@@ -215,6 +214,36 @@ async function seedProperty(ownerId: number) {
     throw new Error("Missing USD currency");
   }
 
+  const [arbProvince] = await db
+    .select()
+    .from(provinces)
+    .where(sql`${provinces.code} = 'AR-B'`)
+    .limit(1);
+
+  if (!arbProvince) {
+    throw new Error("Missing province: AR-B");
+  }
+
+  const [activeStatus] = await db
+    .select()
+    .from(propertyStatuses)
+    .where(sql`${propertyStatuses.code} = 'ACTIVE'`)
+    .limit(1);
+
+  if (!activeStatus) {
+    throw new Error("Missing Active Status");
+  }
+
+  const [hotelType] = await db
+    .select()
+    .from(propertyTypes)
+    .where(sql`${propertyTypes.code} = 'HOTEL'`)
+    .limit(1);
+
+  if (!hotelType) {
+    throw new Error("Missing property type: HOTEL");
+  }
+
   const [property] = await db
     .insert(properties)
     .values({
@@ -225,10 +254,10 @@ async function seedProperty(ownerId: number) {
       slug: "hotel-demo-buenos-aires",
       timezone: "America/Argentina/Buenos_Aires",
       currencyId: usdCurrency.id,
-      provinceId: 1, // Asumiendo que existe Buenos Aires
-      propertyTypeId: 1, // Asumiendo que existe 'hotel'
+      provinceId: arbProvince.id, // Asumiendo que existe Buenos Aires
+      typeId: hotelType.id, // Asumiendo que existe 'hotel'
       address: "Av. Corrientes 1234, CABA",
-      status: "ACTIVE",
+      statusId: activeStatus.id,
       maxGuests: 100,
       defaultCheckInMinutes: 900, // 15:00
       defaultCheckOutMinutes: 660, // 11:00
@@ -313,69 +342,6 @@ async function seedUnits(propertyId: number) {
   console.log(`[seed] units created for property ${propertyId}`);
 }
 
-
-async function seedChannels() {
-  const [otaType] = await db
-    .select()
-    .from(channelTypes)
-    .where(sql`${channelTypes.code} = 'OTA'`)
-    .limit(1);
-
-  if (!otaType) {
-    throw new Error("Missing channel type: OTA");
-  }
-
-  const [adminType] = await db
-    .select()
-    .from(channelTypes)
-    .where(sql`${channelTypes.code} = 'ADMIN'`)
-    .limit(1);
-
-  if (!adminType) {
-    throw new Error("Missing channel type: ADMIN");
-  }
-
-  const [activeStatus] = await db
-    .select()
-    .from(channelStatuses)
-    .where(sql`${channelStatuses.code} = 'ACTIVE'`)
-    .limit(1);
-
-  if (!activeStatus) {
-    throw new Error("Missing channel status: ACTIVE");
-  }
-
-  await db.insert(channels).values([
-    {
-      code: "AIRBNB",
-      name: "Airbnb",
-      typeId: otaType.id,
-      statusId: activeStatus.id
-    },
-    {
-      code: "BOOKING",
-      name: "Booking.com",
-      typeId: otaType.id,
-      statusId: activeStatus.id
-    },
-    {
-      code: "VRBO",
-      name: "Vrbo",
-      typeId: otaType.id,
-      statusId: activeStatus.id
-    },
-    {
-      code: "ADMIN",
-      name: "Administrative Channel",
-      typeId: adminType.id,
-      statusId: activeStatus.id
-    },
-  ]).onConflictDoNothing({
-    target: channels.code,
-  });
-
-  console.log(`[seed] channels created`);
-}
 
 async function seedGuest() {
   const [existingGuest] = await db

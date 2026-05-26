@@ -30,5 +30,4 @@ export const unitTypes = pgTable("unit_types", {
 export const unitStatuses = pgTable("unit_statuses", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
   code: varchar("code", { length: 50 }).notNull().unique(),
-  name: varchar("name", { length: 100 }).notNull(),
 });
