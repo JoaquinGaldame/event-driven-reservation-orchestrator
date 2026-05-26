@@ -15,7 +15,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { properties } from "../../core/properties/properties.js";
 import { units } from "../../core/properties/index.js";
-import { reservationStatuses } from "../../core/catalog/reservations_catalog.js";
+import { reservationStatuses } from "./reservation_statuses.js";
 import { currencies } from "../../core/catalog/index.js";
 import { sql } from "drizzle-orm";
 import { guests } from "../../core/guests/guest.js";

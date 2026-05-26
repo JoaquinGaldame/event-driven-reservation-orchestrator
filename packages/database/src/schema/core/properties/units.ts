@@ -18,7 +18,6 @@ export const units = pgTable(
   "units",
   {
     id: bigserial("id", { mode: "number" }).primaryKey(),
-    publicId: uuid("public_id").defaultRandom().notNull(),
     propertyId: bigint("property_id", { mode: "number" }).notNull().references(() => properties.id),
     unitTypeId: integer("unit_type_id").notNull().references(() => unitTypes.id),
     statusId: integer("status_id").notNull().references(() => unitStatuses.id),
@@ -33,7 +32,6 @@ export const units = pgTable(
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
   },
   (table) => ({
-    publicIdIdx: uniqueIndex("units_public_id_idx").on(table.publicId),
     propertyCodeIdx: uniqueIndex("units_property_code_idx").on(
       table.propertyId,
       table.code,

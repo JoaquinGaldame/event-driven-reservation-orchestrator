@@ -1,13 +1,11 @@
 import { integer, pgTable, varchar } from "drizzle-orm/pg-core";
 
 /**
- * TEMP_HOLD
- * OWNER_BLOCK
- * RESERVATION_LOCK
- * MAINTENANCE_BLOCK
+ * ACTUAL
+ * PENDING
+ * REVERSED
  */
-export const inventoryLockTypes = pgTable("inventory_lock_types", {
+export const ledgerEntryTypes = pgTable("ledger_entry_types", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
   code: varchar("code", { length: 50 }).notNull().unique(),
-  name: varchar("name", { length: 100 }).notNull(),
 });

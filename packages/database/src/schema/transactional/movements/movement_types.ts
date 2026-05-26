@@ -1,13 +1,15 @@
 import { integer, pgTable, varchar } from "drizzle-orm/pg-core";
 
 /**
- * TEMP_HOLD
- * OWNER_BLOCK
- * RESERVATION_LOCK
- * MAINTENANCE_BLOCK
+ * reservation
+ * maintenance
+ * owner_hold
+ * blocked
+ * reactivated
+ * cleaning
+ * inspection
  */
-export const inventoryLockTypes = pgTable("inventory_lock_types", {
+export const movementTypes = pgTable("movement_types", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
   code: varchar("code", { length: 50 }).notNull().unique(),
-  name: varchar("name", { length: 100 }).notNull(),
 });

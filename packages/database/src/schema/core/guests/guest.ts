@@ -16,7 +16,6 @@ export const guests = pgTable(
   "guests",
   {
     id: bigserial("id", { mode: "number" }).primaryKey(),
-    code: integer("code").notNull(),
     firstName: varchar("first_name", { length: 100 }).notNull(),
     lastName: varchar("last_name", { length: 100 }),
     email: varchar("email", { length: 255 }),
@@ -30,7 +29,6 @@ export const guests = pgTable(
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
   },
   (table) => ({
-    codeIdx: uniqueIndex("guests_public_code_idx").on(table.code),
     emailIdx: index("guests_email_idx").on(table.email),
     documentIdx: index("guests_document_idx").on(
       table.documentType,
