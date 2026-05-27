@@ -7,11 +7,16 @@ import {
   Typography,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
+import MenuIcon from '@mui/icons-material/Menu';
 import LightModeIcon from '@mui/icons-material/LightMode';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 import { useThemeMode } from '../contexts/ThemeModeContext';
 
-export function Topbar() {
+type Props = {
+  onToggleSidebar: () => void;
+};
+
+export function Topbar({ onToggleSidebar }: Props) {
   const { mode, toggleTheme } = useThemeMode();
 
   return (
@@ -26,6 +31,9 @@ export function Topbar() {
       }}
     >
       <Toolbar sx={{ gap: 2 }}>
+        <IconButton onClick={onToggleSidebar}>
+          <MenuIcon />
+        </IconButton>
         <Box sx={{ flex: 1 }}>
           <Typography variant="h6" sx={{ fontWeight: 700 }}>
             Reservation Operations Console
