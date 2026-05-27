@@ -1,6 +1,7 @@
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { AppShell } from './layouts/AppShell';
 import { PlaceholderPage } from '../shared/components/PlaceholderPage/PlaceholderPage';
+import { DashboardPage } from '../features/dashboard/pages/DashboardPage';
 
 const router = createBrowserRouter([
   {
@@ -10,10 +11,7 @@ const router = createBrowserRouter([
       {
         index: true,
         element: (
-          <PlaceholderPage
-            title="Business Dashboard"
-            description="Executive overview of reservations, overbooking prevention, failures and operational risk."
-          />
+          <DashboardPage/>
         ),
       },
       {
