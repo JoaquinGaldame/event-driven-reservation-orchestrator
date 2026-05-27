@@ -1,29 +1,18 @@
 import { Box, Typography } from '@mui/material';
-import type { ReactNode } from 'react';
+import type { PageHeaderProps } from './PageHeader.types';
+import {
+  pageHeaderActionsSx,
+  pageHeaderDescriptionSx,
+  pageHeaderRootSx,
+  pageHeaderTitleSx,
+} from './PageHeader.styles';
 
-type PageHeaderProps = {
-  title: string;
-  description?: string;
-  actions?: ReactNode;
-};
 
 export function PageHeader({ title, description, actions }: PageHeaderProps) {
   return (
-    <Box
-      sx={{
-        mb: 3,
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'flex-start',
-        gap: 2,
-      }}
-    >
+    <Box sx={pageHeaderRootSx}>
       <Box>
-        <Typography
-          variant="h4"
-          component="h1"
-          sx={{ fontWeight: 800 }}
-        >
+        <Typography variant="h4" component="h1" sx={pageHeaderTitleSx}>
           {title}
         </Typography>
 
@@ -31,24 +20,14 @@ export function PageHeader({ title, description, actions }: PageHeaderProps) {
           <Typography
             variant="body2"
             color="text.secondary"
-            sx={{ mt: 0.5 }}
+            sx={pageHeaderDescriptionSx}
           >
             {description}
           </Typography>
         )}
       </Box>
 
-      {actions && (
-        <Box
-          sx={{
-            display: 'flex',
-            gap: 1,
-            alignItems: 'center',
-          }}
-        >
-          {actions}
-        </Box>
-      )}
+      {actions && <Box sx={pageHeaderActionsSx}>{actions}</Box>}
     </Box>
   );
 }
