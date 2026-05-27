@@ -2,6 +2,8 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { AppShell } from './layouts/AppShell';
 import { PlaceholderPage } from '../shared/components/PlaceholderPage/PlaceholderPage';
 import { DashboardPage } from '../features/dashboard/pages/DashboardPage';
+import { ReservationsPage } from '../features/reservations/pages/ReservationsPage';
+import { ReservationDetailPage } from '../features/reservations/pages/ReservationDetailPage';
 
 const router = createBrowserRouter([
   {
@@ -16,12 +18,11 @@ const router = createBrowserRouter([
       },
       {
         path: 'reservations',
-        element: (
-          <PlaceholderPage
-            title="Reservation Workflow Explorer"
-            description="Inspect distributed reservation workflows, status transitions, correlation IDs and idempotency keys."
-          />
-        ),
+        element: <ReservationsPage />,
+      },
+      {
+        path: 'reservations/:id',
+        element: <ReservationDetailPage />,
       },
       {
         path: 'inventory',
