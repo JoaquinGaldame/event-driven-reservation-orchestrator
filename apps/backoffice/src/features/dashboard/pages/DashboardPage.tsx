@@ -17,7 +17,12 @@ import { InventoryPressureChart } from '../components/InventoryPressureChart';
 
 export function DashboardPage() {
   return (
-    <Box>
+    <Box
+      sx={{
+        maxWidth: 1900,
+        mx: 'auto',
+      }}
+    >
       <PageHeader
         title="Business Dashboard"
         description="Last 24h · prod-eu-west-1 · multi-channel reservation orchestration"
@@ -47,9 +52,10 @@ export function DashboardPage() {
           display: 'grid',
           gridTemplateColumns: {
             xs: '1fr',
-            xl: 'minmax(0, 1fr) 320px',
+            xl: 'minmax(0, 1fr) 300px',
           },
           gap: 2,
+          alignItems: 'start',
         }}
       >
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -60,7 +66,7 @@ export function DashboardPage() {
               display: 'grid',
               gridTemplateColumns: {
                 xs: '1fr',
-                lg: '2fr 1fr',
+                lg: 'minmax(0, 2fr) minmax(320px, 1fr)',
               },
               gap: 2,
             }}

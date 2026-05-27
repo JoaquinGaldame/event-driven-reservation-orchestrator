@@ -66,6 +66,12 @@ export const dashboardKpis: DashboardKpi[] = [
 ];
 
 export const reservationTrend: ReservationTrendPoint[] = [
+  { day: 'D-12', received: 72, confirmed: 65, failed: 3 },
+  { day: 'D-11', received: 88, confirmed: 70, failed: 8 },
+  { day: 'D-10', received: 105, confirmed: 85, failed: 5 },
+  { day: 'D-9', received: 70, confirmed: 67, failed: 6 },
+  { day: 'D-8', received: 89, confirmed: 82, failed: 4 },
+  { day: 'D-7', received: 96, confirmed: 82, failed: 5 },
   { day: 'D-6', received: 72, confirmed: 58, failed: 3 },
   { day: 'D-5', received: 88, confirmed: 70, failed: 4 },
   { day: 'D-4', received: 95, confirmed: 82, failed: 5 },

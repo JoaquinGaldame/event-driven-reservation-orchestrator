@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 
 type MetricCardProps = {
   title: string;
-  value: string | number;
+  value: string | number | ReactNode;
   subtitle?: string;
   icon?: ReactNode;
   trend?: {
@@ -18,73 +18,56 @@ const trendColor = {
   neutral: 'text.secondary',
 } as const;
 
-export function MetricCard({
-  title,
-  value,
-  subtitle,
-  icon,
-  trend,
-}: MetricCardProps) {
+export function MetricCard({ title, value, subtitle, icon, trend }: MetricCardProps) {
   return (
     <Paper
       variant="outlined"
       sx={{
-        p: 2.5,
-        borderRadius: 3,
-        height: '100%',
+        p: 2,
+        borderRadius: 2,
+        minHeight: 118,
         bgcolor: 'background.paper',
+        borderColor: 'divider',
       }}
     >
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          gap: 2,
-          mb: 1.5,
-        }}
-      >
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2 }}>
         <Typography
           variant="caption"
           color="text.secondary"
-          sx={{
-            fontWeight: 800,
-            textTransform: 'uppercase',
-            letterSpacing: 0.8,
-          }}
+          sx={{ fontWeight: 800, textTransform: 'uppercase' }}
         >
           {title}
         </Typography>
 
-        {icon && (
-          <Box color="text.secondary">
-            {icon}
-          </Box>
-        )}
+        {icon && <Box sx={{ color: 'text.secondary' }}>{icon}</Box>}
       </Box>
 
       <Typography
-        variant="h4"
-        sx={{ fontWeight: 900, lineHeight: 1 }}
+        sx={{
+          mt: 1,
+          fontFamily: 'JetBrains Mono, ui-monospace, monospace',
+          fontSize: 28,
+          fontWeight: 800,
+          lineHeight: 1,
+          color: 'text.primary',
+        }}
       >
         {value}
       </Typography>
 
       {subtitle && (
-        <Typography
-          variant="body2"
-          color="text.secondary"
-          sx={{ mt: 1 }}
-        >
+        <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
           {subtitle}
         </Typography>
       )}
 
       {trend && (
         <Typography
-          variant="body2"
+          variant="caption"
           sx={{
-            mt: 1,
-            fontWeight: 700,
+            mt: 0.75,
+            display: 'block',
+            fontWeight: 800,
             color: trendColor[trend.tone],
           }}
         >
