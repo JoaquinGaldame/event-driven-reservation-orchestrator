@@ -19,6 +19,7 @@ export async function startReservationConsumers(): Promise<void> {
     clientId: config.kafka.clientId,
     brokers: [config.kafka.broker],
     groupId: config.kafka.groupId,
+    serviceName: "reservation-service",
   });
 
   const reservationRepository = new DrizzleReservationRepository();

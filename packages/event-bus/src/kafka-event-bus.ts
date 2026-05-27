@@ -6,6 +6,7 @@ type KafkaEventBusOptions = {
   clientId: string;
   brokers: string[];
   groupId: string;
+  serviceName: string;
 };
 
 export class KafkaEventBus implements EventBus {
@@ -13,9 +14,12 @@ export class KafkaEventBus implements EventBus {
   private readonly producer: Producer;
   private readonly consumer: Consumer;
   private readonly handlers = new Map<string, EventHandler[]>();
+  private readonly serviceName: string;
   private connected = false;
 
   constructor(options: KafkaEventBusOptions) {
+    this.serviceName = options.serviceName;
+
     this.kafka = new Kafka({
       clientId: options.clientId,
       brokers: options.brokers
@@ -35,7 +39,9 @@ export class KafkaEventBus implements EventBus {
 
     this.connected = true;
 
-    logger.info("KafkaEventBus connected");
+    logger.info("KafkaEventBus connected", {
+      service: this.serviceName
+    });
   }
 
   async disconnect(): Promise<void> {
@@ -44,7 +50,9 @@ export class KafkaEventBus implements EventBus {
 
     this.connected = false;
 
-    logger.info("KafkaEventBus disconnected");
+    logger.info("KafkaEventBus disconnected", {
+      service: this.serviceName
+    });
   }
 
   async publish<T extends DomainEvent>(event: T): Promise<void> {
@@ -61,6 +69,7 @@ export class KafkaEventBus implements EventBus {
     });
 
     logger.info("Kafka event published", {
+      service: this.serviceName,
       eventType: event.eventType
     });
   }
@@ -71,6 +80,7 @@ export class KafkaEventBus implements EventBus {
     this.handlers.set(eventType, existing);
 
     logger.info("Kafka handler registered", {
+      service: this.serviceName,
       eventType
     });
   }
@@ -94,6 +104,7 @@ export class KafkaEventBus implements EventBus {
         const event = JSON.parse(message.value.toString()) as DomainEvent;
 
         logger.info("Kafka event received", {
+          service: this.serviceName,
           eventType: topic,
           handlers: handlers.length
         });

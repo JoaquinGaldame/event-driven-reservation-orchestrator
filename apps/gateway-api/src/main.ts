@@ -8,7 +8,8 @@ const HOST = process.env.HOST ?? "0.0.0.0";
 const eventBus = new KafkaEventBus({
   clientId: "gateway-api",
   brokers: [process.env.KAFKA_BROKER ?? "localhost:9092"],
-  groupId: "gateway-api"
+  groupId: "gateway-api",
+  serviceName: "gateway-api"
 });
 
 
