@@ -1,0 +1,669 @@
+Tablas SQL definidas en PostgreSQL para Event Driven Reservations Orchestrator
+Origen: packages/database/src/schema
+Total de tablas detectadas: 46
+
+account_movement_types
+- id: integer
+- code: varchar
+- name: varchar
+Valores posibles / referencia:
+  * GUEST
+  * PLATFORM
+  * OWNER
+  * TAX_AUTHORITY
+
+account_movements
+- id: bigserial
+- reservation_id: bigint
+- payment_id: bigint
+- owner_payout_id: bigint
+- account_type_id: integer
+- account_identifier: varchar
+- movement_type: varchar
+- amount: numeric
+- currency_id: bigint
+- description: text
+- ledger_entry_type_id: integer
+- reversed_at: timestamp
+- reversed_by_movement_id: bigint
+- correlation_id: uuid
+- causation_id: uuid
+- created_at: timestamp
+
+audit_logs
+- id: bigserial
+- entity_type: varchar
+- entity_id: varchar
+- action: varchar
+- actor_type: varchar
+- actor_id: uuid
+- metadata: jsonb
+- correlation_id: uuid
+- created_at: timestamp
+
+channel_statuses
+- id: integer
+- code: varchar
+- name: varchar
+Valores posibles / referencia:
+  * code=ACTIVE, name=Active
+  * code=INACTIVE, name=Inactive
+  * code=SUSPENDED, name=Suspended
+  * code=DEPRECATED, name=Deprecated
+
+channel_types
+- id: integer
+- code: varchar
+- name: varchar
+Valores posibles / referencia:
+  * code=OTA, name=Online Travel Agent
+  * code=DIRECT, name=Direct
+  * code=ADMIN, name=Admin
+  * code=API, name=API
+
+channels
+- id: bigserial
+- code: varchar
+- name: varchar
+- type_id: integer
+- status_id: integer
+- created_at: timestamp
+- updated_at: timestamp
+- deleted_at: timestamp
+Valores posibles / referencia:
+  * code=ABNB, name=Airbnb
+  * code=BookinCOM, name=Booking.com
+  * code=Vrbo, name=Vrbo
+  * code=Admin, name=Administrator
+  * code=Direct, name=DirectChannel
+
+charges_types
+- id: integer
+- code: varchar
+- name: varchar
+Valores posibles / referencia:
+  * ROOM_RATE
+  * CLEANING_FEE
+  * SERVICE_FEE
+  * TAX
+  * DISCOUNT
+  * OWNER_FEE
+  * EXTRA_GUEST_FEE
+
+commission_types
+- id: integer
+- code: varchar
+- name: varchar
+Valores posibles / referencia:
+  * code=PERCENTAGE, name=Percentage
+  * code=FIXED_PER_RESERVATION, name=Fixed Per Reservation
+  * code=FIXED_PER_NIGHT, name=Fixed Per Night
+
+countries
+- id: integer
+- code: varchar
+- name: varchar
+Valores posibles / referencia:
+  * code=AR, name=Argentina
+  * code=BR, name=Brasil
+  * code=CL, name=Chile
+  * code=UY, name=Uruguay
+  * code=PY, name=Paraguay
+  * code=BO, name=Bolivia
+  * code=PE, name=Perú
+  * code=US, name=United States
+  * code=ES, name=España
+  * code=FR, name=Francia
+  * code=IT, name=Italia
+  * code=DE, name=Alemania
+  * code=GB, name=Reino Unido
+  * code=CN, name=China
+  * code=JP, name=Japón
+  * code=RU, name=Rusia
+  * code=IN, name=India
+  * code=MX, name=México
+  * code=CO, name=Colombia
+  * code=VE, name=Venezuela
+  * code=EC, name=Ecuador
+  * code=GT, name=Guatemala
+  * code=CR, name=Costa Rica
+  * code=PA, name=Panamá
+  * code=NL, name=Países Bajos
+  * code=BE, name=Bélgica
+  * code=CH, name=Suiza
+  * code=DO, name=República Dominicana
+  * code=HN, name=Honduras
+  * code=NI, name=Nicaragua
+  * code=SV, name=El Salvador
+  * code=CU, name=Cuba
+
+currencies
+- id: integer
+- code: varchar
+- symbol: varchar
+- decimal_places: integer
+Valores posibles / referencia:
+  * code=USD, name=US Dollar, symbol=$
+  * code=ARS, name=Argentine Peso, symbol=$
+  * code=EUR, name=Euro, symbol=€
+
+dead_letter_events
+- id: bigserial
+- event_id: uuid
+- event_type: varchar
+- payload: jsonb
+- error_message: text
+- retry_count: integer
+- failed_service: varchar
+- correlation_id: uuid
+- causation_id: uuid
+- created_at: timestamp
+
+domain_events
+- id: bigserial
+- event_id: uuid
+- aggregate_type: varchar
+- aggregate_id: varchar
+- event_type: varchar
+- payload: jsonb
+- correlation_id: uuid
+- causation_id: uuid
+- occurred_at: timestamp
+- recorded_at: timestamp
+
+guests
+- id: bigserial
+- first_name: varchar
+- last_name: varchar
+- email: varchar
+- phone: varchar
+- document_type: varchar
+- document_number: varchar
+- nationality_id: integer
+- language_id: integer
+- created_at: timestamp
+- updated_at: timestamp
+- deleted_at: timestamp
+
+idempotency_keys
+- id: bigserial
+- public_id: uuid
+- scope: varchar
+- idempotency_key: varchar
+- request_hash: varchar
+- response_payload: jsonb
+- status: varchar
+- expires_at: timestamp
+- created_at: timestamp
+- updated_at: timestamp
+
+inventory_lock_statuses
+- id: integer
+- code: varchar
+- name: varchar
+Valores posibles / referencia:
+  * ACTIVE
+  * RELEASED
+  * EXPIRED
+  * CANCELLED
+
+inventory_lock_types
+- id: integer
+- code: varchar
+- name: varchar
+Valores posibles / referencia:
+  * code=TEMP_HOLD, name=Temporary Hold
+  * code=RESERVATION, name=Reservation Lock
+  * code=OWNER_BLOCK, name=Owner Block
+  * code=MAINTENANCE_BLOCK, name=Maintenance Block
+
+inventory_locks
+- id: bigserial
+- reservation_id: bigint
+- property_id: bigint
+- unit_id: bigint
+- lock_type_id: integer
+- status_id: integer
+- check_in: timestamp
+- check_out: timestamp
+- expires_at: timestamp
+- released_at: timestamp
+- correlation_id: uuid
+- created_at: timestamp
+- updated_at: timestamp
+
+inventory_movements
+- id: bigserial
+- property_id: bigint
+- unit_id: bigint
+- reservation_id: bigint
+- movement_type_id: integer
+- sub_type: varchar
+- start_date: timestamp
+- end_date: timestamp
+- reason: text
+- reference_code: varchar
+- description: text
+- overbooked_alternative_unitid: bigint
+- compensation_amount: numeric
+- currency_id: bigint
+- initiated_by: varchar
+- initiated_by_users_id: bigint
+- correlation_id: uuid
+- causation_id: uuid
+- created_at: timestamp
+- updated_at: timestamp
+
+languages
+- id: integer
+- code_iso: varchar
+- name: varchar
+Valores posibles / referencia:
+  * codeIso=en, name=English
+  * codeIso=es, name=Spanish
+  * codeIso=pt, name=Portuguese
+  * codeIso=fr, name=French
+  * codeIso=de, name=German
+  * codeIso=nl, name=Dutch
+  * codeIso=zh, name=Chinese
+  * codeIso=ja, name=Japanese
+  * codeIso=ru, name=Russian
+  * codeIso=ar, name=Arabic
+  * codeIso=it, name=Italian
+  * codeIso=ko, name=Korean
+  * codeIso=hi, name=Hindi
+
+ledger_entry_types
+- id: integer
+- code: varchar
+Valores posibles / referencia:
+  * ACTUAL
+  * PENDING
+  * REVERSED
+
+movement_types
+- id: integer
+- code: varchar
+Valores posibles / referencia:
+  * code=reservation
+  * code=maintenance
+  * code=owner_hold
+  * code=blocked
+  * code=reactivated
+  * code=cleaning
+  * code=inspection
+
+outbox_events
+- id: bigserial
+- event_id: uuid
+- aggregate_type: varchar
+- aggregate_id: varchar
+- event_type: varchar
+- payload: jsonb
+- status: varchar
+- retry_count: integer
+- available_at: timestamp
+- published_at: timestamp
+- correlation_id: uuid
+- causation_id: uuid
+- created_at: timestamp
+
+owner_bank_accounts
+- id: bigserial
+- owner_id: bigint
+- account_name: varchar
+- bank_country: varchar
+- account_currency_id: bigint
+- routing_number: varchar
+- swift_bic: varchar
+- iban: varchar
+- is_default: boolean
+- is_active: boolean
+- beneficiary_tax_id: varchar
+- created_at: timestamp
+- updated_at: timestamp
+
+owner_contacts
+- id: bigserial
+- owner_id: bigint
+- contact_type: varchar
+- last_name: varchar
+- email: varchar
+- phone: varchar
+- mobile: varchar
+- is_primary: boolean
+- created_at: timestamp
+- updated_at: timestamp
+
+owner_payout_statuses
+- id: integer
+- code: varchar
+Valores posibles / referencia:
+  * PENDING
+  * PROCESSING
+  * COMPLETED
+  * FAILED
+  * CANCELLED
+
+owner_payouts
+- id: bigserial
+- owner_id: bigint
+- property_id: bigint
+- reservation_id: bigint
+- total_amount: numeric
+- currency_id: bigint
+- platform_commission: numeric
+- taxes_withheld: numeric
+- adjustments: numeric
+- net_amount: numeric
+- scheduled_date: timestamp
+- processed_date: timestamp
+- failed_date: timestamp
+- failure_reason: text
+- provider: varchar
+- provider_payout_id: varchar
+- provider_reference: varchar
+- split_sequence: integer
+- split_total: integer
+- correlation_id: uuid
+- causation_id: uuid
+- created_at: timestamp
+- updated_at: timestamp
+
+owner_statuses
+- id: integer
+- code: varchar
+Valores posibles / referencia:
+  * code=ACTIVE
+  * code=INACTIVE
+  * code=SUSPENDED
+  * code=ARCHIVED
+
+owner_types
+- id: integer
+- code: varchar
+Valores posibles / referencia:
+  * code=individual
+  * code=company
+  * code=ngo
+  * code=government
+  * code=trust
+
+owners
+- id: bigserial
+- public_id: uuid
+- first_name: varchar
+- email: varchar
+- phone: varchar
+- billing_email: varchar
+- preferred_language: varchar
+- document_type: varchar
+- document_number: varchar
+- status_id: integer
+- created_at: timestamp
+- updated_at: timestamp
+- deleted_at: timestamp
+
+payment_attempts
+- id: bigserial
+- payment_id: bigint
+- attempt_number: integer
+- provider: varchar
+- request_payload: jsonb
+- response_payload: jsonb
+- status_id: integer
+- error_code: varchar
+- error_message: text
+- correlation_id: uuid
+- created_at: timestamp
+
+payments
+- id: bigserial
+- internal_code: uuid
+- reservation_id: bigint
+- provider: varchar
+- provider_payment_id: varchar
+- provider_reference: varchar
+- external_receipt_number: varchar
+- currency_id: bigint
+- amount: numeric
+- status_id: integer
+- causation_id: uuid
+- authorized_at: timestamp
+- captured_at: timestamp
+- failed_at: timestamp
+- cancelled_at: timestamp
+- correlation_id: uuid
+- created_at: timestamp
+- updated_at: timestamp
+
+payments_attempts_statuses
+- id: integer
+- code: varchar
+- name: varchar
+Valores posibles / referencia:
+  * PENDING
+  * PROCESSING
+  * SUCCEEDED
+  * FAILED
+  * CANCELLED
+
+payments_statuses
+- id: integer
+- code: varchar
+- name: varchar
+- description: varchar
+Valores posibles / referencia:
+  * code=PENDING, name=Pending, description=Initial state when payment is created but not yet processed
+  * code=AUTHORIZED, name=Authorized, description=Funds are reserved but not yet charged to the customer's account
+  * code=CAPTURED, name=Captured, description=Funds have been successfully transferred from customer to merchant
+  * code=FAILED, name=Failed, description="Payment could not be completed due to insufficient funds
+  * code=CANCELLED, name=Cancelled, description="Payment was voided before capture
+  * code=REFUNDED, name=Refunded, description=Full amount has been returned to customer's original payment method
+  * code=PARTIALLY_REFUNDED, name=Partially Refunded, description=Part of the captured amount has been returned to the customer
+  * code=EXPIRED, name=Expired, description=Pending payment was not completed within the allowed timeframe
+
+properties
+- id: bigserial
+- public_id: uuid
+- name: text
+- displayName: text
+- slug: text
+- owner_id: bigint
+- timezone: text
+- currency_id: integer
+- province_id: integer
+- type_id: integer
+- address: text
+- status_id: integer
+- max_guests: integer
+- default_check_in_minutes: integer
+- default_check_out_minutes: integer
+- allow_overbooking: boolean
+- is_active: boolean
+- deleted_at: timestamp
+- created_at: timestamp
+- updated_at: timestamp
+
+property_owner_commission_rules
+- id: bigserial
+- property_id: bigint
+- commission_type_id: integer
+- value: integer
+- valid_from: timestamp
+- valid_to: timestamp
+- created_at: timestamp
+
+property_statuses
+- id: integer
+- code: varchar
+- name: varchar
+- description: text
+Valores posibles / referencia:
+  * code=ACTIVE, name=Active, description=
+  * code=INACTIVE, name=Inactive, description=
+  * code=ONBOARDING, name=ONBOARDING, description=
+  * code=SUSPENDED, name=Suspended, description=
+  * code=ARCHIVED, name=Archived, description=
+
+property_types
+- id: integer
+- code: varchar
+- name: varchar
+Valores posibles / referencia:
+  * code=HOUSE, name=House
+  * code=APARTMENT, name=Apartment
+  * code=HOTEL, name=Hotel
+  * code=VILLA, name=Villa
+  * code=CABIN, name=Cabin
+  * code=CONDO, name=Condominium
+  * code=TOWNHOUSE, name=Townhouse
+  * code=BUNGALOW, name=Bungalow
+  * code=LODGE, name=Lodge
+  * code=RESORT, name=Resort
+  * code=HOSTEL, name=Hostel
+  * code=GUESTHOUSE, name=Guesthouse
+  * code=BED_BREAKFAST, name=Bed & Breakfast
+  * code=BOAT, name=Boat
+  * code=TINY_HOUSE, name=Tiny House
+  * code=CASTLE, name=Castle
+  * code=FARM, name=Farm Stay
+  * code=GLAMPING, name=Glamping
+  * code=COTTAGE, name=Cottage
+  * code=LOFT, name=Loft
+  * code=DUPLEX, name=Duplex
+  * code=PENTHOUSE, name=Penthouse
+  * code=STUDIO, name=Studio
+  * code=ROOM, name=Private Room
+  * code=SHARED_ROOM, name=Shared Room
+
+provinces
+- id: integer
+- country_id: integer
+- code: varchar
+- name: varchar
+Valores posibles / referencia:
+  * code=AR-B, name=Buenos Aires
+  * code=AR-C, name=Ciudad Autónoma de Buenos Aires
+  * code=AR-K, name=Catamarca
+  * code=AR-H, name=Chaco
+  * code=AR-U, name=Chubut
+  * code=AR-X, name=Córdoba
+  * code=AR-W, name=Corrientes
+  * code=AR-E, name=Entre Ríos
+  * code=AR-P, name=Formosa
+  * code=AR-Y, name=Jujuy
+  * code=AR-L, name=La Pampa
+  * code=AR-F, name=La Rioja
+  * code=AR-M, name=Mendoza
+  * code=AR-N, name=Misiones
+  * code=AR-Q, name=Neuquén
+  * code=AR-R, name=Río Negro
+  * code=AR-A, name=Salta
+  * code=AR-J, name=San Juan
+  * code=AR-D, name=San Luis
+  * code=AR-Z, name=Santa Cruz
+  * code=AR-S, name=Santa Fe
+  * code=AR-G, name=Santiago del Estero
+  * code=AR-V, name=Tierra del Fuego
+  * code=AR-T, name=Tucumán
+
+reservation_charges
+- id: bigserial
+- reservation_id: bigint
+- charge_type_id: integer
+- description: text
+- amount: numeric
+- created_at: timestamp
+
+reservation_financials
+- reservation_id: bigint
+- gross_amount: numeric
+- discount_amount: numeric
+- tax_amount: numeric
+- platform_commission_amount: numeric
+- owner_payout_amount: numeric
+- currency_id: integer
+- calculated_at: timestamp
+
+reservation_statuses
+- id: integer
+- code: varchar
+- name: varchar
+Valores posibles / referencia:
+  * code=PENDING, name=Pending
+  * code=INVENTORY_LOCKED, name=Inventory Locked
+  * code=PAYMENT_REQUIRED, name=Payment Required
+  * code=CONFIRMED, name=Confirmed
+  * code=REJECTED, name=Rejected
+  * code=CANCELLED, name=Cancelled
+
+reservations
+- id: bigserial
+- code: uuid
+- property_id: bigint
+- unit_id: bigint
+- guest_id: bigint
+- channel_id: bigint
+- currency_id: bigint
+- reservation_number: varchar
+- check_in: date
+- check_out: date
+- status: integer
+- total_amount: numeric
+- rejection_reason: text
+- idempotency_key: varchar
+- correlation_id: uuid
+- created_at: timestamp
+- updated_at: timestamp
+- deleted_at: timestamp
+
+unit_daily_rates
+- id: bigserial
+- unit_id: bigint
+- date: timestamp
+- currency_id: integer
+- price_per_night: integer
+- min_stay_nights: integer
+- max_stay_nights: integer
+- is_available: boolean
+- created_at: timestamp
+- updated_at: timestamp
+
+unit_statuses
+- id: integer
+- code: varchar
+Valores posibles / referencia:
+  * code=ACTIVE
+  * code=INACTIVE
+  * code=MAINTENANCE
+  * code=BLOCKED
+  * code=ARCHIVED
+
+unit_types
+- id: integer
+- code: varchar
+- name: varchar
+Valores posibles / referencia:
+  * code=ROOM, name=House
+  * code=APARTMENT, name=Apartment
+  * code=HOUSE, name=House
+  * code=CABIN, name=Cabin
+  * code=CABIN, name=Cabin
+  * code=BED, name=Bed
+  * code=SUITE, name=Suite
+
+units
+- id: bigserial
+- property_id: bigint
+- unit_type_id: integer
+- status_id: integer
+- name: varchar
+- code: varchar
+- max_guests: integer
+- bedrooms: integer
+- bathrooms: integer
+- base_price_per_night: integer
+- created_at: timestamp
+- updated_at: timestamp
+- deleted_at: timestamp
