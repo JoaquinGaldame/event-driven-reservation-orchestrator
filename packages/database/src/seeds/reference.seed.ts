@@ -417,11 +417,11 @@ async function seedChannelTypes() {
   await db
     .insert(channels)
     .values([
-      { id: 1, code: "ABNB", name: "Airbnb", typeId: typesOta.id, statusId: statusActive.id, createdAt: new Date(), updatedAt: new Date() },
-      { id: 2, code: "BookinCOM", name: "Booking.com", typeId: typesOta.id, statusId: statusActive.id, createdAt: new Date(), updatedAt: new Date() },
-      { id: 3, code: "Vrbo", name: "Vrbo", typeId: typesOta.id, statusId: statusActive.id, createdAt: new Date(), updatedAt: new Date() },
-      { id: 4, code: "Admin", name: "Administrator", typeId: typesAdmin.id, statusId: statusActive.id, createdAt: new Date(), updatedAt: new Date() },
-      { id: 5, code: "Direct", name: "DirectChannel", typeId: typesDirect.id, statusId: statusActive.id, createdAt: new Date(), updatedAt: new Date() },
+      { id: 1, code: "AIRBNB", name: "Airbnb", typeId: typesOta.id, statusId: statusActive.id, createdAt: new Date(), updatedAt: new Date() },
+      { id: 2, code: "BOOKING", name: "Booking.com", typeId: typesOta.id, statusId: statusActive.id, createdAt: new Date(), updatedAt: new Date() },
+      { id: 3, code: "VRBO", name: "Vrbo", typeId: typesOta.id, statusId: statusActive.id, createdAt: new Date(), updatedAt: new Date() },
+      { id: 4, code: "ADMIN", name: "Administrator", typeId: typesAdmin.id, statusId: statusActive.id, createdAt: new Date(), updatedAt: new Date() },
+      { id: 5, code: "DIRECT", name: "DirectChannel", typeId: typesDirect.id, statusId: statusActive.id, createdAt: new Date(), updatedAt: new Date() },
     ])
     .onConflictDoNothing();
 }

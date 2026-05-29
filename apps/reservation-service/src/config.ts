@@ -4,6 +4,7 @@ type ReservationServiceConfig = {
     broker: string;
     clientId: string;
     groupId: string;
+    service: string;
   };
   outbox: {
     batchSize: number;
@@ -47,6 +48,7 @@ export const config: ReservationServiceConfig = {
     broker: readRequiredString("KAFKA_BROKER", "localhost:9092"),
     clientId: readRequiredString("KAFKA_CLIENT_ID", "reservation-service"),
     groupId: readRequiredString("KAFKA_GROUP_ID", "reservation-service"),
+    service: "reservation-service"
   },
   outbox: {
     batchSize: readPositiveInteger("OUTBOX_BATCH_SIZE", 100),

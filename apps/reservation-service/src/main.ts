@@ -1,6 +1,6 @@
 import { logger } from "@reservation/logger";
 import { config } from "./config.js";
-import { startReservationConsumers } from "./infrastructure/consumers/reservation-events.consumer.js";
+import { startReservationConsumers } from "./interfaces/messaging/reservation-events.consumer.js";
 
 try {
   logger.info("Starting reservation service", {

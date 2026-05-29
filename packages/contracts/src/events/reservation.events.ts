@@ -1,4 +1,4 @@
-export type ReservationChannel = "AIRBNB" | "BOOKING" | "DIRECT" | "ADMIN";
+export type ReservationChannel = "AIRBNB" | "BOOKING" | "VRBO" | "DIRECT" | "ADMIN";
 
 export type ReservationRequestedEvent = {
   eventId: string;
@@ -30,6 +30,7 @@ export type InventoryLockRequestedEvent = {
     reservationId: string;
     propertyId: string;
     unitId: string;
+    channelCode: string;
     checkIn: string;
     checkOut: string;
   };
@@ -46,6 +47,7 @@ export type InventoryLockedEvent = {
     reservationId: string;
     propertyId: string;
     unitId: string;
+    channelCode: string;
     checkIn: string;
     checkOut: string;
   };

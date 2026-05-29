@@ -8,18 +8,26 @@ import type {
 } from "@reservation/contracts";
 
 import { config } from "../../config.js";
+
 import { RequestReservationHandler } from "../../application/handlers/request-reservation.handler.js";
-import { InventoryLockedHandler } from "../../application/handlers/inventory-locked.handler.js";
-import { InventoryRejectedHandler } from "../../application/handlers/inventory-rejected.handler.js";
-import { DrizzleReservationRepository } from "../db/drizzle-reservation.repository.js";
-import { KafkaEventPublisher } from "../publishers/kafka-event.publisher.js";
+import { ConfirmReservationHandler } from "../../application/handlers/confirm-reservation.handler.js";
+import { RejectReservationHandler } from "../../application/handlers/reject-reservation.handler.js";
+
+import { DrizzleReservationRepository } from "../../infrastructure/db/drizzle-reservation.repository.js";
+import { KafkaEventPublisher } from "../../infrastructure/publishers/kafka-event.publisher.js";
+
+import {
+  toConfirmReservationCommand,
+  toRejectReservationCommand,
+  toRequestReservationCommand,
+} from "./reservation-message-router.js";
 
 export async function startReservationConsumers(): Promise<void> {
   const eventBus = new KafkaEventBus({
     clientId: config.kafka.clientId,
     brokers: [config.kafka.broker],
     groupId: config.kafka.groupId,
-    serviceName: "reservation-service",
+    serviceName: config.kafka.service
   });
 
   const reservationRepository = new DrizzleReservationRepository();
@@ -30,26 +38,34 @@ export async function startReservationConsumers(): Promise<void> {
     eventPublisher,
   );
 
-  const inventoryLockedHandler = new InventoryLockedHandler(
+  const confirmReservationHandler = new ConfirmReservationHandler(
     reservationRepository,
   );
 
-  const inventoryRejectedHandler = new InventoryRejectedHandler(
+  const rejectReservationHandler = new RejectReservationHandler(
     reservationRepository,
   );
 
   await eventPublisher.flushPendingInventoryLockRequests();
 
   eventBus.subscribe("ReservationRequested", async (event) => {
-    await requestReservationHandler.handle(event as ReservationRequestedEvent);
+    const command = toRequestReservationCommand(
+      event as ReservationRequestedEvent,
+    );
+
+    await requestReservationHandler.handle(command);
   });
 
   eventBus.subscribe("InventoryLocked", async (event) => {
-    await inventoryLockedHandler.handle(event as InventoryLockedEvent);
+    const command = toConfirmReservationCommand(event as InventoryLockedEvent);
+
+    await confirmReservationHandler.handle(command);
   });
 
   eventBus.subscribe("InventoryRejected", async (event) => {
-    await inventoryRejectedHandler.handle(event as InventoryRejectedEvent);
+    const command = toRejectReservationCommand(event as InventoryRejectedEvent);
+
+    await rejectReservationHandler.handle(command);
   });
 
   await eventBus.startConsuming([
@@ -59,6 +75,6 @@ export async function startReservationConsumers(): Promise<void> {
   ]);
 
   logger.info("Reservation consumers started", {
-    service: "reservation-service",
+    service: config.kafka.service,
   });
 }

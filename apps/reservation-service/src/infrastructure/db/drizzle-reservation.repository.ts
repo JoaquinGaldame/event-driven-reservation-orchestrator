@@ -11,26 +11,30 @@ import {
 import { logger } from "@reservation/logger";
 import type {
   InventoryLockRequestedEvent,
-  InventoryLockedEvent,
-  InventoryRejectedEvent,
-  ReservationRequestedEvent,
 } from "@reservation/contracts";
+
+import type { RequestReservationCommand } from "../../application/commands/request-reservation.command.js";
+import type { ConfirmReservationCommand } from "../../application/commands/confirm-reservation.command.js";
+import type { RejectReservationCommand } from "../../application/commands/reject-reservation.command.js";
+import { ReservationMapper } from "../../domain/mappers/reservation.mapper.js";
 
 import type {
   CreateReservationResult,
   ReservationRepository,
 } from "../../application/ports/reservation.repository.js";
+import { ReservationStatus } from "../../domain/reservation-status.js";
 
 export class DrizzleReservationRepository implements ReservationRepository {
-  async createFromRequestedEvent(
-    event: ReservationRequestedEvent,
+
+  async createFromRequestCommand(
+    command: RequestReservationCommand,
   ): Promise<CreateReservationResult> {
     const channel = await db.query.channels.findFirst({
-      where: eq(channels.code, event.payload.channel),
+      where: eq(channels.code, command.channelCode),
     });
 
     if (!channel) {
-      throw new Error(`Channel not found: ${event.payload.channel}`);
+      throw new Error(`Channel not found: ${command.channelCode}`);
     }
 
     const pendingStatus = await db.query.reservationStatuses.findFirst({
@@ -53,7 +57,7 @@ export class DrizzleReservationRepository implements ReservationRepository {
       const existing = await tx.query.reservations.findFirst({
         where: and(
           eq(reservations.channelId, channel.id),
-          eq(reservations.idempotencyKey, event.payload.idempotencyKey),
+          eq(reservations.idempotencyKey, command.idempotencyKey),
         ),
       });
 
@@ -90,17 +94,17 @@ export class DrizzleReservationRepository implements ReservationRepository {
       const [created] = await tx
         .insert(reservations)
         .values({
-          code: event.payload.reservationId,
-          propertyId: Number(event.payload.propertyId),
-          unitId: Number(event.payload.unitId),
+          code: command.reservationCode,
+          propertyId: Number(command.propertyId),
+          unitId: Number(command.unitId),
           channelId: channel.id,
           currencyId: currency.id,
           reservationNumber,
-          checkIn: event.payload.checkIn,
-          checkOut: event.payload.checkOut,
+          checkIn: command.checkIn,
+          checkOut: command.checkOut,
           status: pendingStatus.id,
-          idempotencyKey: event.payload.idempotencyKey,
-          correlationId: event.correlationId,
+          idempotencyKey: command.idempotencyKey,
+          correlationId: command.correlationId,
           totalAmount: "0.00",
         })
         .returning({
@@ -120,12 +124,13 @@ export class DrizzleReservationRepository implements ReservationRepository {
         eventId: crypto.randomUUID(),
         eventType: "InventoryLockRequested",
         occurredAt: new Date().toISOString(),
-        correlationId: event.correlationId,
-        causationId: event.eventId,
+        correlationId: command.correlationId,
+        causationId: command.causationId,
         payload: {
           reservationId: String(created.id),
           propertyId: String(created.propertyId),
           unitId: String(created.unitId),
+          channelCode: String(channel.code),
           checkIn: created.checkIn,
           checkOut: created.checkOut,
         },
@@ -139,8 +144,8 @@ export class DrizzleReservationRepository implements ReservationRepository {
           eventType: inventoryLockRequested.eventType,
           payload: inventoryLockRequested,
           status: "PENDING",
-          correlationId: event.correlationId,
-          causationId: event.eventId,
+          correlationId: command.correlationId,
+          causationId: command.causationId,
         })
         .returning({
           id: outboxEvents.id,
@@ -157,63 +162,67 @@ export class DrizzleReservationRepository implements ReservationRepository {
     });
   }
 
-  async markInventoryLocked(event: InventoryLockedEvent): Promise<void> {
-    const [pendingStatus, confirmedStatus] = await Promise.all([
-      db.query.reservationStatuses.findFirst({
-        where: eq(reservationStatuses.code, "PENDING"),
-      }),
-      db.query.reservationStatuses.findFirst({
-        where: eq(reservationStatuses.code, "CONFIRMED"),
-      }),
-    ]);
+  async confirmReservation(command: ConfirmReservationCommand): Promise<void> {
+    const reservationId = Number(command.reservationId);
 
-    if (!pendingStatus) {
-      throw new Error("Reservation status not found: PENDING");
-    }
-
-    if (!confirmedStatus) {
-      throw new Error("Reservation status not found: CONFIRMED");
-    }
-
-    const reservationId = Number(event.payload.reservationId);
-
-    const reservation = await db.query.reservations.findFirst({
+    const dbReservation = await db.query.reservations.findFirst({
       where: eq(reservations.id, reservationId),
     });
 
-    if (!reservation) {
+    if (!dbReservation) {
       throw new Error(
-        `Reservation not found for InventoryLocked event. reservationId=${event.payload.reservationId}`,
+        `Reservation not found for InventoryLocked event. reservationId=${command.reservationId}`,
       );
     }
 
-    if (reservation.status === confirmedStatus.id) {
+    const currentStatusCode = await this.getStatusCode(dbReservation.status);
+
+    if (currentStatusCode === ReservationStatus.InventoryLocked) {
       logger.info(
-        "InventoryLocked ignored because reservation is already CONFIRMED",
+        "InventoryLocked ignored because reservation is already INVENTORY_LOCKED",
         {
           reservationId,
-          correlationId: event.correlationId,
+          correlationId: command.correlationId,
         },
       );
       return;
     }
 
-    if (reservation.status !== pendingStatus.id) {
-      throw new Error(
-        `Invalid reservation transition on InventoryLocked. reservationId=${reservationId}, currentStatus=${reservation.status}, expectedStatus=${pendingStatus.id}`,
-      );
-    }
+    const domainReservation = ReservationMapper.toDomain({
+      id: dbReservation.id,
+      code: dbReservation.code,
+      propertyId: dbReservation.propertyId,
+      unitId: dbReservation.unitId,
+      guestId: dbReservation.guestId,
+      reservationNumber: dbReservation.reservationNumber,
+      channelId: dbReservation.channelId,
+      currencyId: dbReservation.currencyId,
+      checkIn: dbReservation.checkIn,
+      checkOut: dbReservation.checkOut,
+      statusCode: currentStatusCode,
+      totalAmount: String(dbReservation.totalAmount),
+      rejectionReason: dbReservation.rejectionReason,
+      idempotencyKey: dbReservation.idempotencyKey,
+      correlationId: dbReservation.correlationId,
+    });
+
+    const updatedReservation = domainReservation.confirmInventoryLock();
+
+    const inventoryLockedStatus = await this.getStatusByCode(
+      ReservationStatus.InventoryLocked,
+    );
 
     const [updated] = await db
       .update(reservations)
       .set({
-        status: confirmedStatus.id,
+        status: inventoryLockedStatus.id,
+        rejectionReason: updatedReservation.rejectionReason ?? null,
         updatedAt: new Date(),
       })
       .where(
         and(
           eq(reservations.id, reservationId),
-          eq(reservations.status, pendingStatus.id),
+          eq(reservations.status, dbReservation.status),
         ),
       )
       .returning({
@@ -222,87 +231,77 @@ export class DrizzleReservationRepository implements ReservationRepository {
 
     if (!updated) {
       throw new Error(
-        `Reservation confirmation failed due to concurrent state change. reservationId=${reservationId}`,
+        `Reservation inventory lock confirmation failed due to concurrent state change. reservationId=${reservationId}`,
       );
     }
 
-    logger.info("Reservation marked as CONFIRMED", {
+    logger.info("Reservation marked as INVENTORY_LOCKED", {
       reservationId,
-      correlationId: event.correlationId,
+      correlationId: command.correlationId,
     });
   }
 
-  async markInventoryRejected(event: InventoryRejectedEvent): Promise<void> {
-    const [pendingStatus, confirmedStatus, rejectedStatus] = await Promise.all([
-      db.query.reservationStatuses.findFirst({
-        where: eq(reservationStatuses.code, "PENDING"),
-      }),
-      db.query.reservationStatuses.findFirst({
-        where: eq(reservationStatuses.code, "CONFIRMED"),
-      }),
-      db.query.reservationStatuses.findFirst({
-        where: eq(reservationStatuses.code, "REJECTED"),
-      }),
-    ]);
+  async rejectReservation(command: RejectReservationCommand): Promise<void> {
+    const reservationId = Number(command.reservationId);
 
-    if (!pendingStatus) {
-      throw new Error("Reservation status not found: PENDING");
-    }
-
-    if (!confirmedStatus) {
-      throw new Error("Reservation status not found: CONFIRMED");
-    }
-
-    if (!rejectedStatus) {
-      throw new Error("Reservation status not found: REJECTED");
-    }
-
-    const reservationId = Number(event.payload.reservationId);
-
-    const reservation = await db.query.reservations.findFirst({
+    const dbReservation = await db.query.reservations.findFirst({
       where: eq(reservations.id, reservationId),
     });
 
-    if (!reservation) {
+    if (!dbReservation) {
       throw new Error(
-        `Reservation not found for InventoryRejected event. reservationId=${event.payload.reservationId}`,
+        `Reservation not found for InventoryRejected event. reservationId=${command.reservationId}`,
       );
     }
 
-    if (reservation.status === rejectedStatus.id) {
+    const currentStatusCode = await this.getStatusCode(dbReservation.status);
+
+    if (currentStatusCode === ReservationStatus.Rejected) {
       logger.info(
         "InventoryRejected ignored because reservation is already REJECTED",
         {
           reservationId,
-          correlationId: event.correlationId,
+          correlationId: command.correlationId,
         },
       );
       return;
     }
 
-    if (reservation.status === confirmedStatus.id) {
-      throw new Error(
-        `Invalid reservation transition on InventoryRejected. reservationId=${reservationId} is already CONFIRMED`,
-      );
-    }
+    const domainReservation = ReservationMapper.toDomain({
+      id: dbReservation.id,
+      code: dbReservation.code,
+      propertyId: dbReservation.propertyId,
+      unitId: dbReservation.unitId,
+      guestId: dbReservation.guestId,
+      reservationNumber: dbReservation.reservationNumber,
+      channelId: dbReservation.channelId,
+      currencyId: dbReservation.currencyId,
+      checkIn: dbReservation.checkIn,
+      checkOut: dbReservation.checkOut,
+      statusCode: currentStatusCode,
+      totalAmount: String(dbReservation.totalAmount),
+      rejectionReason: dbReservation.rejectionReason,
+      idempotencyKey: dbReservation.idempotencyKey,
+      correlationId: dbReservation.correlationId,
+    });
 
-    if (reservation.status !== pendingStatus.id) {
-      throw new Error(
-        `Invalid reservation transition on InventoryRejected. reservationId=${reservationId}, currentStatus=${reservation.status}, expectedStatus=${pendingStatus.id}`,
-      );
-    }
+    const rejectedReservation = domainReservation.reject(command.reason);
+
+    const rejectedStatus = await this.getStatusByCode(
+      ReservationStatus.Rejected,
+    );
 
     const [updated] = await db
       .update(reservations)
       .set({
         status: rejectedStatus.id,
-        rejectionReason: event.payload.reason,
+        rejectionReason: rejectedReservation.rejectionReason ?? command.reason,
         updatedAt: new Date(),
       })
       .where(
         and(
           eq(reservations.id, reservationId),
-          eq(reservations.status, pendingStatus.id),
+          eq(reservations.status, dbReservation.status),
         ),
       )
       .returning({
@@ -317,8 +316,33 @@ export class DrizzleReservationRepository implements ReservationRepository {
 
     logger.info("Reservation marked as REJECTED", {
       reservationId,
-      correlationId: event.correlationId,
-      reason: event.payload.reason,
+      correlationId: command.correlationId,
+      reason: command.reason,
     });
+  }
+
+
+  private async getStatusByCode(code: ReservationStatus) {
+    const status = await db.query.reservationStatuses.findFirst({
+      where: eq(reservationStatuses.code, code),
+    });
+
+    if (!status) {
+      throw new Error(`Reservation status not found: ${code}`);
+    }
+
+    return status;
+  }
+
+  private async getStatusCode(statusId: number): Promise<ReservationStatus> {
+    const status = await db.query.reservationStatuses.findFirst({
+      where: eq(reservationStatuses.id, statusId),
+    });
+
+    if (!status) {
+      throw new Error(`Reservation status not found. id=${statusId}`);
+    }
+
+    return status.code as ReservationStatus;
   }
 }
