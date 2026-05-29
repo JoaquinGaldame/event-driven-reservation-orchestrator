@@ -18,6 +18,7 @@ import {
   channelTypes,
   channelStatuses,
   inventoryLockTypes,
+  inventoryLockStatuses,
   movementTypes,
 } from "../schema/index.js";
 
@@ -33,6 +34,7 @@ export async function seedReferenceData() {
   await seedPaymentStatuses();
   await seedMovementTypes();
   await seedChannelTypes();
+  await seedInventoryLockStatuses();
   await seedLockTypes();
 
   console.log("[seed] reference complete");
@@ -441,6 +443,17 @@ async function seedMovementTypes() {
     .onConflictDoNothing();
 }
 
+  async function seedInventoryLockStatuses() {
+    await db
+      .insert(inventoryLockStatuses)
+      .values([
+        { code: "ACTIVE", name: "Active" },
+        { code: "RELEASED", name: "Released" },
+        { code: "EXPIRED", name: "Expired" },
+        { code: "CANCELLED", name: "Cancelled" },
+      ])
+      .onConflictDoNothing();
+  }
 
 async function seedLockTypes() {
   await db

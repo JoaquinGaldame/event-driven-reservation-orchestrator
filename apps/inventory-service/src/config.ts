@@ -1,4 +1,4 @@
-type ReservationServiceConfig = {
+type InventoryServiceConfig = {
   databaseUrl: string;
   kafka: {
     broker: string;
@@ -21,6 +21,7 @@ function readRequiredString(key: string, fallback?: string): string {
   return value;
 }
 
+
 function readPositiveInteger(key: string, fallback: number): number {
   const raw = process.env[key];
 
@@ -39,16 +40,17 @@ function readPositiveInteger(key: string, fallback: number): number {
   return parsed;
 }
 
-export const config: ReservationServiceConfig = {
+
+export const config: InventoryServiceConfig = {
   databaseUrl: readRequiredString(
     "DATABASE_URL",
     "postgres://reservation_user:reservation_pass@localhost:55432/reservation_orchestrator",
   ),
   kafka: {
     broker: readRequiredString("KAFKA_BROKER", "localhost:9092"),
-    clientId: readRequiredString("KAFKA_CLIENT_ID", "reservation-service"),
-    groupId: readRequiredString("KAFKA_GROUP_ID", "reservation-service"),
-    service: "reservation-service"
+    clientId: readRequiredString("KAFKA_CLIENT_ID", "inventory-service"),
+    groupId: readRequiredString("KAFKA_GROUP_ID", "inventory-service"),
+    service: "inventory-service"
   },
   outbox: {
     batchSize: readPositiveInteger("OUTBOX_BATCH_SIZE", 100),

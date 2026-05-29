@@ -1,101 +1,28 @@
-import { db, inventoryLocks, and, eq, lt, gt } from "@reservation/database";
-import { KafkaEventBus } from "@reservation/event-bus";
 import { logger } from "@reservation/logger";
-import type {
-  InventoryLockedEvent,
-  InventoryLockRequestedEvent,
-  InventoryRejectedEvent
-} from "@reservation/contracts";
+import { config } from "./config.js";
+import { startInventoryConsumers } from "./interfaces/messaging/inventory-events.consumer.js";
 
-const eventBus = new KafkaEventBus({
-  clientId: "inventory-service",
-  brokers: [process.env.KAFKA_BROKER ?? "localhost:9092"],
-  groupId: "inventory-service",
-  serviceName: "inventory-service"
-});
 
-eventBus.subscribe<InventoryLockRequestedEvent>(
-  "InventoryLockRequested",
-  async (event) => {
-    logger.info("InventoryLockRequested received", {
-      reservationId: event.payload.reservationId,
-      unitId: event.payload.unitId
-    });
+try {
+  logger.info("Starting inventory service", {
+    service: "inventory-service",
+    kafkaBroker: config.kafka.broker,
+    kafkaClientId: config.kafka.clientId,
+    kafkaGroupId: config.kafka.groupId,
+    outboxBatchSize: config.outbox.batchSize
+  });
 
-    const requestedCheckIn = new Date(event.payload.checkIn);
-    const requestedCheckOut = new Date(event.payload.checkOut);
+  await startInventoryConsumers();
 
-    const overlappingLocks = await db
-      .select()
-      .from(inventoryLocks)
-      .where(
-        and(
-          eq(inventoryLocks.unitId, event.payload.unitId),
-          lt(inventoryLocks.checkIn, requestedCheckOut),
-          gt(inventoryLocks.checkOut, requestedCheckIn)
-        )
-      );
+  logger.info("Inventory service started", {
+    service: "inventory-service",
+  });
 
-    if (overlappingLocks.length > 0) {
-      const rejectedEvent: InventoryRejectedEvent = {
-        eventId: crypto.randomUUID(),
-        eventType: "InventoryRejected",
-        occurredAt: new Date().toISOString(),
-        correlationId: event.correlationId,
-        causationId: event.eventId,
-        payload: {
-          reservationId: event.payload.reservationId,
-          propertyId: event.payload.propertyId,
-          unitId: event.payload.unitId,
-          checkIn: event.payload.checkIn,
-          checkOut: event.payload.checkOut,
-          reason: "UNIT_NOT_AVAILABLE"
-        }
-      };
+} catch (error) {
+  logger.error("Inventory service failed to start", {
+    service: "inventory-service",
+    error,
+  });
 
-      await eventBus.publish(rejectedEvent);
-
-      logger.warn("Inventory rejected due overlap", {
-        reservationId: event.payload.reservationId,
-        unitId: event.payload.unitId
-      });
-
-      return;
-    }
-
-    await db.insert(inventoryLocks).values({
-      id: crypto.randomUUID(),
-      reservationId: event.payload.reservationId,
-      propertyId: event.payload.propertyId,
-      unitId: event.payload.unitId,
-      checkIn: requestedCheckIn,
-      checkOut: requestedCheckOut
-    });
-
-    const lockedEvent: InventoryLockedEvent = {
-      eventId: crypto.randomUUID(),
-      eventType: "InventoryLocked",
-      occurredAt: new Date().toISOString(),
-      correlationId: event.correlationId,
-      causationId: event.eventId,
-      payload: {
-        reservationId: event.payload.reservationId,
-        propertyId: event.payload.propertyId,
-        unitId: event.payload.unitId,
-        checkIn: event.payload.checkIn,
-        checkOut: event.payload.checkOut
-      }
-    };
-
-    await eventBus.publish(lockedEvent);
-
-    logger.info("Inventory locked", {
-      reservationId: event.payload.reservationId,
-      unitId: event.payload.unitId
-    });
-  }
-);
-
-await eventBus.startConsuming(["InventoryLockRequested"]);
-
-logger.info("Inventory service started");
+  process.exit(1);
+}
