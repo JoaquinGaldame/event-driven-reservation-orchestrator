@@ -1,77 +1,40 @@
-export type ReservationChannel = "AIRBNB" | "BOOKING" | "VRBO" | "DIRECT" | "ADMIN";
+import type { EventEnvelope } from "../shared/event-envelope.js";
+import { ChannelCode } from "../shared/channels.js";
 
-export type ReservationRequestedEvent = {
-  eventId: string;
-  eventType: "ReservationRequested";
-  occurredAt: string;
-  correlationId: string;
-  causationId?: string;
-
-  payload: {
+export type ReservationRequestedEvent = EventEnvelope<
+  "ReservationRequested",
+  {
     reservationId: string;
     propertyId: string;
     unitId: string;
-    channel: ReservationChannel;
-    guestName: string;
+    guestId: string;
+    channelCode: ChannelCode;
     checkIn: string;
     checkOut: string;
     idempotencyKey: string;
-  };
-};
+  }
+>;
 
-export type InventoryLockRequestedEvent = {
-  eventId: string;
-  eventType: "InventoryLockRequested";
-  occurredAt: string;
-  correlationId: string;
-  causationId: string;
+export type ReservationRejectedEvent =
+  EventEnvelope<
+    "ReservationRejected",
+    {
+      reservationId: string;
+      reason: string;
+    }
+  >;
 
-  payload: {
-    reservationId: string;
-    propertyId: string;
-    unitId: string;
-    channelCode: string;
-    checkIn: string;
-    checkOut: string;
-  };
-};
+export type ReservationConfirmedEvent =
+  EventEnvelope<
+    "ReservationConfirmed",
+    {
+      reservationId: string;
+      paymentId: string;
+    }
+  >;
 
-export type InventoryLockedEvent = {
-  eventId: string;
-  eventType: "InventoryLocked";
-  occurredAt: string;
-  correlationId: string;
-  causationId: string;
 
-  payload: {
-    reservationId: string;
-    propertyId: string;
-    unitId: string;
-    channelCode: string;
-    checkIn: string;
-    checkOut: string;
-  };
-};
-
-export type InventoryRejectedEvent = {
-  eventId: string;
-  eventType: "InventoryRejected";
-  occurredAt: string;
-  correlationId: string;
-  causationId: string;
-
-  payload: {
-    reservationId: string;
-    propertyId: string;
-    unitId: string;
-    checkIn: string;
-    checkOut: string;
-    reason: "UNIT_NOT_AVAILABLE";
-  };
-};
-
-export type ReservationEvent =
-  | ReservationRequestedEvent
-  | InventoryLockRequestedEvent
-  | InventoryLockedEvent
-  | InventoryRejectedEvent;
+export type ReservationEvent = 
+ | ReservationRequestedEvent
+ | ReservationRejectedEvent
+ | ReservationConfirmedEvent;
