@@ -3,6 +3,7 @@ import { config } from "../../config.js";
 import type {
   TokenPayload,
   TokenService,
+  VerifiedTokenPayload,
 } from "../../application/ports/token.service.js";
 
 export class JwtTokenService implements TokenService {
@@ -19,6 +20,28 @@ export class JwtTokenService implements TokenService {
     return {
       accessToken,
       expiresInSeconds: config.jwtExpiresInSeconds,
+    };
+  }
+
+  async verify(accessToken: string): Promise<VerifiedTokenPayload> {
+    const decoded = jwt.verify(accessToken, config.jwtSecret, {
+      issuer: "gateway-api",
+      audience: "reservation-orchestrator",
+    });
+
+    if (
+      typeof decoded !== "object" ||
+      typeof decoded.sub !== "string" ||
+      typeof decoded.email !== "string" ||
+      !Array.isArray(decoded.roles)
+    ) {
+      throw new Error("Invalid token payload");
+    }
+
+    return {
+      sub: decoded.sub,
+      email: decoded.email,
+      roles: decoded.roles.filter((role): role is string => typeof role === "string"),
     };
   }
 }
