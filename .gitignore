@@ -17,3 +17,6 @@ grafana-data/
 apps/**/dist
 packages/**/dist
 tests/**/coverage
+
+# Drizzle generated artifacts
+packages/database/drizzle/

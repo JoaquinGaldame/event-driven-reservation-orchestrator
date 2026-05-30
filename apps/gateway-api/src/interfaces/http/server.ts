@@ -6,6 +6,7 @@ import { healthController } from "./controllers/health.controller.js";
 import { authController } from "./controllers/auth.controller.js";
 import { meController } from "./controllers/me.controller.js";
 import { channelReservationsController } from "./controllers/channel-reservations.controller.js";
+import { backofficeReservationsController } from "./controllers/backoffice-reservations.controller.js";
 import { registerErrorHandler } from "./middleware/error-handler.js";
 import { JwtTokenService } from "../../infrastructure/security/jwt-token.service.js";
 import { KafkaReservationEventPublisher } from "../../infrastructure/publishers/kafka-reservation-event.publisher.js";
@@ -43,6 +44,13 @@ export async function buildServer() {
   server.register(async (app) => {
     await channelReservationsController(app, { submitReservationHandler });
   }, { prefix: "/channels" });
+
+  server.register(async (app) => {
+    await backofficeReservationsController(app, {
+      submitReservationHandler,
+      tokenService,
+    });
+  }, { prefix: "/backoffice" });
 
   return server;
 }
