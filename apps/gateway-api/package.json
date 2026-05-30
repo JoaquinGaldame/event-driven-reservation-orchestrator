@@ -12,6 +12,7 @@
     "@reservation/contracts": "workspace:*",
     "@reservation/event-bus": "workspace:*",
     "@reservation/logger": "workspace:*",
+    "@reservation/database": "workspace:*",
     "bcryptjs": "^3.0.3",
     "dotenv": "^17.4.2",
     "fastify": "^5.0.0",

@@ -127,6 +127,9 @@ importers:
       '@reservation/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
+      '@reservation/database':
+        specifier: workspace:*
+        version: link:../../packages/database
       '@reservation/event-bus':
         specifier: workspace:*
         version: link:../../packages/event-bus
