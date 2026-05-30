@@ -3,6 +3,8 @@ set -euo pipefail
 
 echo "[dev:up] Starting local infrastructure..."
 
+COMPOSE_PROJECT="ero"
+
 if ! command -v docker >/dev/null 2>&1; then
   echo "[dev:up] ERROR: Docker is not installed"
   exit 1
@@ -13,6 +15,6 @@ if [ ! -f "infra/docker-compose.yml" ]; then
   exit 1
 fi
 
-docker compose -f infra/docker-compose.yml up -d
+docker compose -p "$COMPOSE_PROJECT" -f infra/docker-compose.yml up -d
 
 echo "[dev:up] Infrastructure started"
