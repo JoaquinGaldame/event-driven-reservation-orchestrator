@@ -200,7 +200,6 @@ export class DrizzleInventoryLockRepository implements InventoryLockRepository {
           reservationId: String(command.reservationId),
           propertyId: String(command.propertyId),
           unitId: String(command.unitId),
-          channelCode: command.channelCode,
           checkIn: command.checkIn,
           checkOut: command.checkOut,
         },

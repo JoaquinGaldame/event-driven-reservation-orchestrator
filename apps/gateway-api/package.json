@@ -12,7 +12,14 @@
     "@reservation/contracts": "workspace:*",
     "@reservation/event-bus": "workspace:*",
     "@reservation/logger": "workspace:*",
+    "bcryptjs": "^3.0.3",
+    "dotenv": "^17.4.2",
     "fastify": "^5.0.0",
+    "jsonwebtoken": "^9.0.3",
     "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^3.0.0",
+    "@types/jsonwebtoken": "^9.0.10"
   }
 }

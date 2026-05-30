@@ -1,38 +1,22 @@
-import { KafkaEventBus } from "@reservation/event-bus";
-import { logger } from "@reservation/logger";
-import { buildApp } from "./app.js";
-
-const PORT = Number(process.env.PORT ?? 3000);
-const HOST = process.env.HOST ?? "0.0.0.0";
-
-const eventBus = new KafkaEventBus({
-  clientId: "gateway-api",
-  brokers: [process.env.KAFKA_BROKER ?? "localhost:9092"],
-  groupId: "gateway-api",
-  serviceName: "gateway-api"
-});
+import "dotenv/config";
+import { config } from "./config.js";
+import { buildServer } from "./interfaces/http/server.js";
 
 
-const app = buildApp({
-  eventBus
-});
+async function bootstrap() {
+  const server = await buildServer();
 
-try {
-  await app.listen({
-    port: PORT,
-    host: HOST
-  });
+  try {
+    await server.listen({
+      port: config.port,
+      host: "0.0.0.0",
+    });
 
-  logger.info("Gateway API started", {
-    service: "gateway-api",
-    port: PORT,
-    host: HOST
-  });
-} catch (error) {
-  logger.error("Gateway API failed to start", {
-    service: "gateway-api",
-    error
-  });
-
-  process.exit(1);
+    server.log.info(`gateway-api listening on port ${config.port}`);
+  } catch (error) {
+    server.log.error(error, "failed to start gateway-api");
+    process.exit(1);
+  }
 }
+
+bootstrap();
