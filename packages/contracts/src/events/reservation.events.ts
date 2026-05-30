@@ -1,5 +1,5 @@
 import type { EventEnvelope } from "../shared/event-envelope.js";
-import { ChannelCode } from "../shared/channels.js";
+import type { ChannelCode } from "../shared/channels.js";
 
 export type ReservationRequestedEvent = EventEnvelope<
   "ReservationRequested",
@@ -9,6 +9,7 @@ export type ReservationRequestedEvent = EventEnvelope<
     unitId: string;
     guestId: string;
     channelCode: ChannelCode;
+    currencyCode: string;
     checkIn: string;
     checkOut: string;
     idempotencyKey: string;

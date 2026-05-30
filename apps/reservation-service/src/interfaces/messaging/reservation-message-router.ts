@@ -13,7 +13,8 @@ export function toRequestReservationCommand(
 ): RequestReservationCommand {
   return {
     reservationCode: event.payload.reservationId,
-    channelCode: event.payload.channel,
+    channelCode: event.payload.channelCode,
+    currencyCode: event.payload.currencyCode,
     propertyId: Number(event.payload.propertyId),
     unitId: Number(event.payload.unitId),
     checkIn: event.payload.checkIn,
@@ -28,7 +29,6 @@ export function toConfirmReservationCommand( event: InventoryLockedEvent ): Conf
   return {
     reservationId: Number(event.payload.reservationId),
     correlationId: event.correlationId,
-    channelCode: event.payload.channelCode,
     causationId: event.eventId,
   };
 }

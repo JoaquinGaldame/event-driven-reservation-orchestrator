@@ -46,11 +46,11 @@ export class DrizzleReservationRepository implements ReservationRepository {
     }
 
     const currency = await db.query.currencies.findFirst({
-      where: eq(currencies.code, "EUR"),
+      where: eq(currencies.code, command.currencyCode),
     });
 
     if (!currency) {
-      throw new Error("Currency not found: EUR");
+      throw new Error(`Currency not found: ${command.currencyCode}`);
     }
 
     return db.transaction(async (tx) => {
@@ -130,7 +130,6 @@ export class DrizzleReservationRepository implements ReservationRepository {
           reservationId: String(created.id),
           propertyId: String(created.propertyId),
           unitId: String(created.unitId),
-          channelCode: String(channel.code),
           checkIn: created.checkIn,
           checkOut: created.checkOut,
         },

@@ -3,6 +3,7 @@ export type RequestReservationCommand = {
   channelCode: string;
   propertyId: number;
   unitId: number;
+  currencyCode: string;
   checkIn: string;
   checkOut: string;
   idempotencyKey: string;
