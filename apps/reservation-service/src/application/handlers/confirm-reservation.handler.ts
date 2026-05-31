@@ -1,5 +1,6 @@
 import type { ReservationRepository } from "../ports/reservation.repository.js";
 import { ConfirmReservationCommand } from "../commands/confirm-reservation.command.js";
+import { EventPublisher } from "../ports/event-publisher.js";
 
 /**
  * Caso de uso encargado de aplicar la confirmacion de lock de inventario
@@ -9,7 +10,10 @@ import { ConfirmReservationCommand } from "../commands/confirm-reservation.comma
  * simplemente orquesta la ejecucion del command interno correspondiente.
  */
 export class ConfirmReservationHandler {
-  constructor(private readonly reservationRepository: ReservationRepository) {}
+  constructor(
+    private readonly reservationRepository: ReservationRepository,
+    private readonly eventPublisher: EventPublisher,
+  ) {}
 
   /**
    * Ejecuta la transicion de la reserva hacia `INVENTORY_LOCKED`.
@@ -20,6 +24,14 @@ export class ConfirmReservationHandler {
    * @param command Datos internos derivados de `InventoryLocked`.
    */
   async handle(command: ConfirmReservationCommand): Promise<void> {
-    await this.reservationRepository.confirmReservation(command);
+    const result = await this.reservationRepository.confirmInventory(command);
+
+    if(!result.pendingPaymentRequestOutboxEventId){
+      return;
+    }
+
+    await this.eventPublisher.publishPendingPaymentRequest(
+      result.pendingPaymentRequestOutboxEventId,
+    );
   }
 }

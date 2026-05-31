@@ -12,7 +12,7 @@ import type {
   PaymentFailedEvent,
 } from "@reservation/contracts";
 
-import type { ProcessPaymentCommand } from "../../application/commands/process-payment.comand.js";
+import type { ProcessPaymentCommand } from "../../application/commands/process-payment.command.js";
 import type {
   PaymentRepository,
   ProcessPaymentResult,
@@ -21,9 +21,8 @@ import { Payment } from "../../domain/payment.entity.js";
 import { PaymentStatus } from "../../domain/payment-status.js";
 
 export class DrizzlePaymentRepository implements PaymentRepository {
-  async processPayment(
-    command: ProcessPaymentCommand,
-  ): Promise<ProcessPaymentResult> {
+  
+  async processPayment(command: ProcessPaymentCommand): Promise<ProcessPaymentResult> {
     const existingPayment = await db.query.payments.findFirst({
       where: eq(payments.reservationId, command.reservationId),
     });
@@ -49,7 +48,7 @@ export class DrizzlePaymentRepository implements PaymentRepository {
           currencyCode: command.currencyCode,
           status,
         },
-        failureReason: status === PaymentStatus.Confirmed ? null : "PAYMENT_DECLINED",
+        failureReason: status === PaymentStatus.Failed ? "PAYMENT_DECLINED" : null,
         pendingResultOutboxEventId:
           existingOutbox && existingOutbox.status !== "PUBLISHED"
             ? existingOutbox.id
@@ -67,11 +66,14 @@ export class DrizzlePaymentRepository implements PaymentRepository {
 
     const pendingStatus = await this.getStatusByCode(PaymentStatus.Pending);
     const confirmedStatus = await this.getStatusByCode(PaymentStatus.Confirmed);
+    const failedStatus = await this.getStatusByCode(PaymentStatus.Failed);
 
     const provider = "mock-gateway";
     const nowIso = new Date().toISOString();
 
-    const domainPayment = Payment.request({
+    const shouldFail = this.shouldSimulatePaymentFailure(command);
+
+    const requestedPayment = Payment.request({
       internalCode: crypto.randomUUID(),
       reservationId: command.reservationId,
       provider,
@@ -82,23 +84,25 @@ export class DrizzlePaymentRepository implements PaymentRepository {
       amount: command.amount.toFixed(2),
       causationId: command.causationId,
       correlationId: command.correlationId,
-    }).confirm(nowIso);
+    });
+
+    const settledPayment = shouldFail ? requestedPayment.fail(nowIso) : requestedPayment.confirm(nowIso);
 
     return db.transaction(async (tx) => {
       const [createdPayment] = await tx
         .insert(payments)
         .values({
-          internalCode: domainPayment.internalCode,
-          reservationId: domainPayment.reservationId,
-          provider: domainPayment.provider,
-          providerPaymentId: domainPayment.providerPaymentId ?? null,
-          providerReference: domainPayment.providerReference ?? null,
-          externalReceiptNumber: domainPayment.externalReceiptNumber ?? null,
+          internalCode: settledPayment.internalCode,
+          reservationId: settledPayment.reservationId,
+          provider: settledPayment.provider,
+          providerPaymentId: settledPayment.providerPaymentId ?? null,
+          providerReference: settledPayment.providerReference ?? null,
+          externalReceiptNumber: settledPayment.externalReceiptNumber ?? null,
           currencyId: currency.id,
-          amount: domainPayment.amount,
+          amount: settledPayment.amount,
           statusId: pendingStatus.id,
-          causationId: domainPayment.causationId ?? null,
-          correlationId: domainPayment.correlationId,
+          causationId: settledPayment.causationId ?? null,
+          correlationId: settledPayment.correlationId,
           authorizedAt: null,
           capturedAt: null,
           failedAt: null,
@@ -117,8 +121,9 @@ export class DrizzlePaymentRepository implements PaymentRepository {
       const [updatedPayment] = await tx
         .update(payments)
         .set({
-          statusId: confirmedStatus.id,
-          capturedAt: new Date(),
+          statusId: shouldFail ? failedStatus.id : confirmedStatus.id,
+          capturedAt: shouldFail ? null : new Date(),
+          failedAt: shouldFail ? new Date() : null,
           updatedAt: new Date(),
         })
         .where(eq(payments.id, createdPayment.id))
@@ -128,6 +133,55 @@ export class DrizzlePaymentRepository implements PaymentRepository {
 
       if (!updatedPayment) {
         throw new Error("Payment status update failed inside transaction");
+      }
+
+      if (shouldFail) {
+        const failedEvent: PaymentFailedEvent = {
+          eventId: crypto.randomUUID(),
+          eventType: "PaymentFailed",
+          occurredAt: new Date().toISOString(),
+          correlationId: command.correlationId,
+          causationId: command.causationId,
+          payload: {
+            paymentId: String(createdPayment.id),
+            reservationId: String(command.reservationId),
+            reason: "PAYMENT_DECLINED",
+          },
+        };
+
+        const [failedOutbox] = await tx
+          .insert(outboxEvents)
+          .values({
+            aggregateType: "payment",
+            aggregateId: String(createdPayment.id),
+            eventType: failedEvent.eventType,
+            payload: failedEvent,
+            status: "PENDING",
+            correlationId: command.correlationId,
+            causationId: command.causationId,
+          })
+          .returning({
+            id: outboxEvents.id,
+          });
+
+        if (!failedOutbox) {
+          throw new Error("PaymentFailed outbox creation failed");
+        }
+
+        return {
+          outcome: "FAILED" as const,
+          payment: {
+            id: createdPayment.id,
+            internalCode: settledPayment.internalCode,
+            reservationId: command.reservationId,
+            provider,
+            amount: settledPayment.amount,
+            currencyCode: command.currencyCode,
+            status: PaymentStatus.Failed,
+          },
+          failureReason: "PAYMENT_DECLINED",
+          pendingResultOutboxEventId: failedOutbox.id,
+        };
       }
 
       const capturedEvent: PaymentCapturedEvent = {
@@ -142,7 +196,7 @@ export class DrizzlePaymentRepository implements PaymentRepository {
         },
       };
 
-      const [createdOutbox] = await tx
+      const [capturedOutbox] = await tx
         .insert(outboxEvents)
         .values({
           aggregateType: "payment",
@@ -157,7 +211,7 @@ export class DrizzlePaymentRepository implements PaymentRepository {
           id: outboxEvents.id,
         });
 
-      if (!createdOutbox) {
+      if (!capturedOutbox) {
         throw new Error("PaymentCaptured outbox creation failed");
       }
 
@@ -165,17 +219,21 @@ export class DrizzlePaymentRepository implements PaymentRepository {
         outcome: "CAPTURED" as const,
         payment: {
           id: createdPayment.id,
-          internalCode: domainPayment.internalCode,
+          internalCode: settledPayment.internalCode,
           reservationId: command.reservationId,
           provider,
-          amount: domainPayment.amount,
+          amount: settledPayment.amount,
           currencyCode: command.currencyCode,
           status: PaymentStatus.Confirmed,
         },
         failureReason: null,
-        pendingResultOutboxEventId: createdOutbox.id,
+        pendingResultOutboxEventId: capturedOutbox.id,
       };
     });
+  }
+
+  private shouldSimulatePaymentFailure(command: ProcessPaymentCommand): boolean {
+    return command.guestId === 999999;
   }
 
   private async getStatusByCode(code: PaymentStatus) {

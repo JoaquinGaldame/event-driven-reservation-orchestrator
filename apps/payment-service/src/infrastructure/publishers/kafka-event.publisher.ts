@@ -4,7 +4,7 @@ import type {
   PaymentFailedEvent,
 } from "@reservation/contracts";
 import type { KafkaEventBus } from "@reservation/event-bus";
-import type { EventPublisher } from "../../application/ports/event-publishers.js";
+import type { EventPublisher } from "../../application/ports/event-publisher.js";
 
 export class KafkaEventPublisher implements EventPublisher {
   constructor(private readonly eventBus: KafkaEventBus) {}

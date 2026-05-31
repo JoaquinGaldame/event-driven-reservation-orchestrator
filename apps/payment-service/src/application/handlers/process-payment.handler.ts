@@ -1,5 +1,5 @@
-import { ProcessPaymentCommand } from "../commands/process-payment.comand.js";
-import { EventPublisher } from "../ports/event-publishers.js";
+import { ProcessPaymentCommand } from "../commands/process-payment.command.js";
+import { EventPublisher } from "../ports/event-publisher.js";
 import type { PaymentRepository } from "../ports/payment.repository.js";
 
 export class ProcessPaymentHandler {

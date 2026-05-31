@@ -1,6 +1,7 @@
 import type { RequestReservationCommand } from "../../application/commands/request-reservation.command.js";
 import type { ConfirmReservationCommand } from "../../application/commands/confirm-reservation.command.js";
 import type { RejectReservationCommand } from "../../application/commands/reject-reservation.command.js";
+import type { CompleteReservationPaymentCommand } from "../commands/complete-reservation-payment.command.js";
 
 /**
  * Proyeccion minima de una reserva creada o recuperada por idempotencia.
@@ -29,6 +30,11 @@ export type CreateReservationResult = {
   reservation: CreatedReservation;
   pendingInventoryLockOutboxEventId: number | null;
 };
+
+
+export type ConfirmInventoryResult = {
+  pendingPaymentRequestOutboxEventId: number | null;
+}
 
 /**
  * Puerto de salida para persistencia y reconstruccion del estado de reservas.
@@ -63,7 +69,9 @@ export interface ReservationRepository {
    *
    * @param command Command interno generado a partir del evento `InventoryLocked`.
    */
-  confirmReservation(command: ConfirmReservationCommand): Promise<void>;
+  confirmInventory(command: ConfirmReservationCommand): Promise<ConfirmInventoryResult>;
+
+  completeReservationPayment(command: CompleteReservationPaymentCommand): Promise<void>;
 
   /**
    * Aplica la transicion derivada de un `InventoryRejected`.

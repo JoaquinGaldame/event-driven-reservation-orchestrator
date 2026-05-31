@@ -1,4 +1,4 @@
-import { ProcessPaymentCommand } from "../commands/process-payment.comand.js";
+import { ProcessPaymentCommand } from "../commands/process-payment.command.js";
 
 
 export type CreatedPayment = {

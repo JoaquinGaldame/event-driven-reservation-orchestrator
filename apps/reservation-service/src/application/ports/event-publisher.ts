@@ -28,4 +28,8 @@ export interface EventPublisher {
    * que representa el evento pendiente de publicacion.
    */
   publishPendingInventoryLockRequest(outboxEventId: number): Promise<void>;
+
+  flushPendingPaymentRequests(): Promise<void>;
+
+  publishPendingPaymentRequest(outboxEventId: number): Promise<void>;
 }

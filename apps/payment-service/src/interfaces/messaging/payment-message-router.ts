@@ -1,5 +1,5 @@
 import type { PaymentRequestedEvent } from "@reservation/contracts";
-import { ProcessPaymentCommand } from "../../application/commands/process-payment.comand.js";
+import { ProcessPaymentCommand } from "../../application/commands/process-payment.command.js";
 
 
 export function toProcessPaymentCommand( event: PaymentRequestedEvent ): ProcessPaymentCommand {

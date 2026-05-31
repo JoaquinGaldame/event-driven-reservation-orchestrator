@@ -3,6 +3,7 @@ export type RequestReservationCommand = {
   channelCode: string;
   propertyId: number;
   unitId: number;
+  guestId: number;
   currencyCode: string;
   checkIn: string;
   checkOut: string;
