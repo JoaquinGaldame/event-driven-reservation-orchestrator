@@ -152,6 +152,10 @@ export class Payment {
     return this.props.id;
   }
 
+  get internalCode(): string {
+    return this.props.internalCode;
+  }
+
   get reservationId(): number {
     return this.props.reservationId;
   }
@@ -185,9 +189,14 @@ export class Payment {
     return this.props.status;
   }
 
+  get causationId(): string {
+    return this.props.causationId;
+  }
+
   get correlationId(): string {
     return this.props.correlationId;
   }
+
 
   get authorizedAt(): string | null | undefined {
     return this.props.authorizedAt;
