@@ -323,7 +323,7 @@ async function seedPaymentStatuses() {
     .values([
       { code: "PENDING", name: "Pending", description: "Initial state when payment is created but not yet processed" },
       { code: "AUTHORIZED", name: "Authorized", description: "Funds are reserved but not yet charged to the customer's account" },
-      { code: "CAPTURED", name: "Captured", description: "Funds have been successfully transferred from customer to merchant" },
+      { code: "CONFIRMED", name: "Confirmed", description: "Funds have been successfully transferred from customer to merchant" },
       { code: "FAILED", name: "Failed", description: "Payment could not be completed due to insufficient funds, declined, or technical error" },
       { code: "CANCELLED", name: "Cancelled", description: "Payment was voided before capture, no funds were transferred" },
       { code: "REFUNDED", name: "Refunded", description: "Full amount has been returned to customer's original payment method" },

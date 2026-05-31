@@ -4,7 +4,7 @@ import { integer, pgTable, varchar } from "drizzle-orm/pg-core";
 /**
  * PENDING
  * AUTHORIZED
- * CAPTURED
+ * CONFIRMED
  * FAILED
  * CANCELLED
  * REFUNDED
