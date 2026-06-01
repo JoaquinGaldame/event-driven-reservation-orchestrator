@@ -1,7 +1,7 @@
-import { ProcessPaymentCommand } from "../commands/process-payment.command.js";
+import type { ProcessPaymentCommand } from "../commands/process-payment.command.js";
+import type { PaymentGatewayResult } from "./payment-gateway.js";
 
-
-export type CreatedPayment = {
+export type PaymentProjection = {
   id: number;
   internalCode: string;
   reservationId: number;
@@ -11,13 +11,32 @@ export type CreatedPayment = {
   status: string;
 };
 
-export type ProcessPaymentResult = {
-  outcome: "CAPTURED" | "FAILED";
-  payment: CreatedPayment | null;
+export type CreatePendingPaymentResult = {
+  payment: PaymentProjection;
+  attemptId: number | null;
+  shouldProcessGateway: boolean;
+  pendingResultOutboxEventId: number | null;
+};
+
+export type RegisterGatewayResult = {
+  outcome: "CAPTURED" | "FAILED" | "PENDING";
+  payment: PaymentProjection;
   failureReason: string | null;
   pendingResultOutboxEventId: number | null;
 };
 
 export interface PaymentRepository {
-  processPayment(command: ProcessPaymentCommand): Promise<ProcessPaymentResult>;
+  createPendingPayment(
+    command: ProcessPaymentCommand,
+    provider: string,
+  ): Promise<CreatePendingPaymentResult>;
+
+  registerGatewayResult(params: {
+    paymentId: number;
+    attemptId: number;
+    gatewayResult: PaymentGatewayResult;
+    causationId: string;
+    correlationId: string;
+    currencyCode: string;
+  }): Promise<RegisterGatewayResult>;
 }

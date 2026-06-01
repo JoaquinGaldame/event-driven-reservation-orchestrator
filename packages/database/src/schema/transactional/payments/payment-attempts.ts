@@ -8,6 +8,7 @@ import {
   pgTable,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
@@ -32,6 +33,9 @@ export const paymentAttempts = pgTable(
   },
   (table) => ({
     paymentIdx: index("payment_attempts_payment_idx").on(table.paymentId),
+    paymentAttemptNumberUq: uniqueIndex(
+      "payment_attempts_payment_attempt_number_uq",
+    ).on(table.paymentId, table.attemptNumber),
     statusIdx: index("payment_attempts_status_id_idx").on(table.statusId),
     correlationIdx: index("payment_attempts_correlation_idx").on(
       table.correlationId,
