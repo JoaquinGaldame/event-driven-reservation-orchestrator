@@ -1,7 +1,7 @@
 import { sql } from "drizzle-orm";
 import { db } from "../client.js";
 import { eq } from "drizzle-orm";
-import { owners, properties, units, guests, ownerTypes, ownerStatuses, propertyStatuses, provinces, propertyTypes, currencies, unitStatuses, unitTypes, countries, languages }  from "../schema/index.js";
+import { owners, properties, units, guests, ownerTypes, ownerStatuses, propertyStatuses, provinces, propertyTypes, currencies, unitStatuses, unitTypes, countries, languages, unitDailyRates }  from "../schema/index.js";
 import { ownerBankAccounts } from "../schema/core/owners/owners_bank_accounts.js";
 import { ownerContacts } from "../schema/core/owners/owner_contacts.js";
 
@@ -11,10 +11,17 @@ export async function seedDemoData() {
   const owner = await getOrCreateOwner();
   await seedOwnerBankAccount(owner.id);
   await seedOwnerContacts(owner.id);
-  
-  const property = await seedProperty(owner.id);
-  await seedUnits(property.id);
-  await seedGuest();
+
+  const propertiesCreated = await seedProperties(owner.id);
+  const allUnits = [];
+
+  for (const property of propertiesCreated) {
+    const unitsCreated = await seedUnits(property.id, property.slug);
+    allUnits.push(...unitsCreated);
+  }
+
+  await seedDailyRates(allUnits);
+  await seedGuests();
 
   console.log("[seed] demo complete");
 }
@@ -193,17 +200,7 @@ async function seedOwnerContacts(ownerId: number) {
 }
 
 
-async function seedProperty(ownerId: number) {
-  const [existingProperty] = await db
-    .select()
-    .from(properties)
-    .where(eq(properties.slug, "hotel-demo-buenos-aires"))
-    .limit(1);
-
-  if (existingProperty) {
-    return existingProperty;
-  }
-
+async function resolveDemoReferences() {
   const [usdCurrency] = await db
     .select()
     .from(currencies)
@@ -244,23 +241,55 @@ async function seedProperty(ownerId: number) {
     throw new Error("Missing property type: HOTEL");
   }
 
+  return {
+    usdCurrency,
+    arbProvince,
+    activeStatus,
+    hotelType,
+  };
+}
+
+async function seedProperty(ownerId: number, values: {
+  name: string;
+  displayName: string;
+  slug: string;
+  address: string;
+}) {
+  const [existingProperty] = await db
+    .select()
+    .from(properties)
+    .where(eq(properties.slug, values.slug))
+    .limit(1);
+
+  if (existingProperty) {
+    console.log(`[seed] property already exists: ${existingProperty.id} - ${existingProperty.name}`);
+    return existingProperty;
+  }
+
+  const {
+    usdCurrency,
+    arbProvince,
+    activeStatus,
+    hotelType,
+  } = await resolveDemoReferences();
+
   const [property] = await db
     .insert(properties)
     .values({
       publicId: crypto.randomUUID(),
       ownerId,
-      name: "Hotel Demo Buenos Aires",
-      displayName: "Hotel Demo Buenos Aires",
-      slug: "hotel-demo-buenos-aires",
+      name: values.name,
+      displayName: values.displayName,
+      slug: values.slug,
       timezone: "America/Argentina/Buenos_Aires",
       currencyId: usdCurrency.id,
-      provinceId: arbProvince.id, // Asumiendo que existe Buenos Aires
-      typeId: hotelType.id, // Asumiendo que existe 'hotel'
-      address: "Av. Corrientes 1234, CABA",
+      provinceId: arbProvince.id,
+      typeId: hotelType.id,
+      address: values.address,
       statusId: activeStatus.id,
       maxGuests: 100,
-      defaultCheckInMinutes: 900, // 15:00
-      defaultCheckOutMinutes: 660, // 11:00
+      defaultCheckInMinutes: 900,
+      defaultCheckOutMinutes: 660,
       allowOverbooking: false,
       isActive: true,
     })
@@ -270,7 +299,32 @@ async function seedProperty(ownerId: number) {
   return property;
 }
 
-async function seedUnits(propertyId: number) {
+async function seedProperties(ownerId: number) {
+  const definitions = [
+    {
+      name: "Hotel Demo Buenos Aires",
+      displayName: "Hotel Demo Buenos Aires",
+      slug: "hotel-demo-buenos-aires",
+      address: "Av. Corrientes 1234, CABA",
+    },
+    {
+      name: "Hotel Demo Palermo",
+      displayName: "Hotel Demo Palermo",
+      slug: "hotel-demo-palermo",
+      address: "Honduras 4580, Palermo, CABA",
+    },
+  ];
+
+  const created = [];
+
+  for (const definition of definitions) {
+    created.push(await seedProperty(ownerId, definition));
+  }
+
+  return created;
+}
+
+async function seedUnits(propertyId: number, propertySlug: string) {
   const [activeUnitStatus] = await db
     .select()
     .from(unitStatuses)
@@ -301,53 +355,88 @@ async function seedUnits(propertyId: number) {
     throw new Error("Missing unit type: SUITE");
   }
 
-  await db.insert(units).values([
+  const standardPrice = propertySlug === "hotel-demo-palermo" ? 18000 : 15000;
+  const suitePrice = propertySlug === "hotel-demo-palermo" ? 42000 : 35000;
+  const definitions = [
     {
-      propertyId,
-      unitTypeId: standardType.id,
-      statusId: activeUnitStatus.id,
       code: "101",
-      name: "Standard Room 101",
-      maxGuests: 2,
-      bedrooms: 1,
-      bathrooms: 1,
-      basePricePerNight: 15000,
-    },
-    {
-      propertyId,
+      name: propertySlug === "hotel-demo-palermo" ? "Palermo Standard 101" : "Standard Room 101",
       unitTypeId: standardType.id,
-      statusId: activeUnitStatus.id,
-      code: "102",
-      name: "Standard Room 102",
       maxGuests: 2,
       bedrooms: 1,
       bathrooms: 1,
-      basePricePerNight: 15000,
+      basePricePerNight: standardPrice,
     },
     {
-      propertyId,
-      unitTypeId: suiteType.id,
-      statusId: activeUnitStatus.id,
+      code: "102",
+      name: propertySlug === "hotel-demo-palermo" ? "Palermo Standard 102" : "Standard Room 102",
+      unitTypeId: standardType.id,
+      maxGuests: 2,
+      bedrooms: 1,
+      bathrooms: 1,
+      basePricePerNight: standardPrice,
+    },
+    {
       code: "201",
-      name: "Suite 201",
+      name: propertySlug === "hotel-demo-palermo" ? "Palermo Suite 201" : "Suite 201",
+      unitTypeId: suiteType.id,
       maxGuests: 4,
       bedrooms: 2,
       bathrooms: 2,
-      basePricePerNight: 35000,
+      basePricePerNight: suitePrice,
     },
-  ]).onConflictDoNothing({
+    {
+      code: "301",
+      name: propertySlug === "hotel-demo-palermo" ? "Palermo Family 301" : "Family Room 301",
+      unitTypeId: suiteType.id,
+      maxGuests: 5,
+      bedrooms: 2,
+      bathrooms: 2,
+      basePricePerNight: suitePrice + 8000,
+    },
+  ];
+
+  await db.insert(units).values(
+    definitions.map((definition) => ({
+      propertyId,
+      unitTypeId: definition.unitTypeId,
+      statusId: activeUnitStatus.id,
+      code: definition.code,
+      name: definition.name,
+      maxGuests: definition.maxGuests,
+      bedrooms: definition.bedrooms,
+      bathrooms: definition.bathrooms,
+      basePricePerNight: definition.basePricePerNight,
+    })),
+  ).onConflictDoNothing({
     target: [units.propertyId, units.code],
   });
 
   console.log(`[seed] units created for property ${propertyId}`);
+
+  const insertedUnits = await db
+    .select()
+    .from(units)
+    .where(eq(units.propertyId, propertyId));
+
+  return insertedUnits;
 }
 
 
-async function seedGuest() {
+async function seedGuest(definition: {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  documentType: string;
+  documentNumber: string;
+  nationalityCode: string;
+  languageCode: string;
+}) {
   const [existingGuest] = await db
     .select()
     .from(guests)
-    .where(eq(guests.email, "john.doe@example.com"))
+    .where(eq(guests.email, definition.email))
     .limit(1);
 
   if (existingGuest) {
@@ -355,41 +444,133 @@ async function seedGuest() {
     return existingGuest;
   }
 
-  const [nlCountry] = await db
+  const [country] = await db
     .select()
     .from(countries)
-    .where(sql`${countries.code} = 'NL'`)
+    .where(sql`${countries.code} = ${definition.nationalityCode}`)
     .limit(1);
 
-  if (!nlCountry) {
-    throw new Error("Missing country: Netherlands (NL)");
+  if (!country) {
+    throw new Error(`Missing country: ${definition.nationalityCode}`);
   }
 
-  const [nlLanguage] = await db
+  const [language] = await db
     .select()
     .from(languages)
-    .where(sql`${languages.codeIso} = 'nl'`)
+    .where(sql`${languages.codeIso} = ${definition.languageCode}`)
     .limit(1);
 
-  if (!nlLanguage) {
-    throw new Error("Missing language: Dutch (nl)");
+  if (!language) {
+    throw new Error(`Missing language: ${definition.languageCode}`);
   }
 
   const [createdGuest] = await db
     .insert(guests)
     .values({
+      firstName: definition.firstName,
+      lastName: definition.lastName,
+      email: definition.email,
+      phone: definition.phone,
+      documentType: definition.documentType,
+      documentNumber: definition.documentNumber,
+      nationalityId: country.id,
+      languageId: language.id,
+    })
+    .returning();
+
+  console.log(`[seed] guest created: ${createdGuest.email}`);
+
+  return createdGuest;
+}
+
+async function seedGuests() {
+  const definitions = [
+    {
       firstName: "John",
       lastName: "Doe",
       email: "john.doe@example.com",
       phone: "+1 555-123-4567",
       documentType: "PASSPORT",
       documentNumber: "X12345678",
-      nationalityId: nlCountry.id,
-      languageId: nlLanguage.id,
-    })
-    .returning();
+      nationalityCode: "NL",
+      languageCode: "nl",
+    },
+    {
+      firstName: "Ana",
+      lastName: "Martinez",
+      email: "ana.martinez@example.com",
+      phone: "+54 11 4444-0101",
+      documentType: "DNI",
+      documentNumber: "30111222",
+      nationalityCode: "AR",
+      languageCode: "es",
+    },
+    {
+      firstName: "Michael",
+      lastName: "Brown",
+      email: "michael.brown@example.com",
+      phone: "+1 212 555 7788",
+      documentType: "PASSPORT",
+      documentNumber: "US9988776",
+      nationalityCode: "US",
+      languageCode: "en",
+    },
+    {
+      firstName: "Sofia",
+      lastName: "Rossi",
+      email: "sofia.rossi@example.com",
+      phone: "+39 06 5555 1100",
+      documentType: "PASSPORT",
+      documentNumber: "IT4455667",
+      nationalityCode: "IT",
+      languageCode: "it",
+    },
+  ];
 
-  console.log("[seed] guest created");
+  for (const definition of definitions) {
+    await seedGuest(definition);
+  }
+}
 
-  return createdGuest;
+async function seedDailyRates(unitsToSeed: Array<typeof units.$inferSelect>) {
+  const [usdCurrency] = await db
+    .select()
+    .from(currencies)
+    .where(sql`${currencies.code} = 'USD'`)
+    .limit(1);
+
+  if (!usdCurrency) {
+    throw new Error("Missing USD currency");
+  }
+
+  const today = new Date();
+  today.setUTCHours(0, 0, 0, 0);
+
+  for (const unit of unitsToSeed) {
+    const rateRows = [];
+
+    for (let offset = 0; offset < 45; offset++) {
+      const rateDate = new Date(today);
+      rateDate.setUTCDate(today.getUTCDate() + offset);
+
+      const weekend = rateDate.getUTCDay() === 5 || rateDate.getUTCDay() === 6;
+      const seasonalMultiplier = weekend ? 1.15 : 1;
+
+      rateRows.push({
+        unitId: unit.id,
+        date: rateDate,
+        currencyId: usdCurrency.id,
+        pricePerNight: Math.round(unit.basePricePerNight * seasonalMultiplier),
+        minStayNights: null,
+        maxStayNights: null,
+        isAvailable: true,
+      });
+    }
+
+    await db.insert(unitDailyRates).values(rateRows).onConflictDoNothing({
+      target: [unitDailyRates.unitId, unitDailyRates.date],
+    });
+  }
+
+  console.log(`[seed] daily rates created for ${unitsToSeed.length} units`);
 }
